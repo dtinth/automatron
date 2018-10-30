@@ -7,24 +7,60 @@ const app = express()
 
 /**
  * @param {WebtaskContext} context
+ * @param {string} message
+ */
+async function handleTextMessage(context, message) {
+  return 'alright! ' + message
+}
+
+/**
+ * @param {WebtaskContext} context
  * @param {import('@line/bot-sdk').WebhookEvent[]} events
  * @param {import('@line/bot-sdk').Client} client
  */
 async function handleWebhook(context, events, client) {
-  return 1
+  async function main() {
+    for (const event of events) {
+      if (event.type === 'message') {
+        await handleMessageEvent(event)
+      }
+    }
+  }
+
+  async function handleMessageEvent(event) {
+    const { replyToken, message } = event
+    console.log(message)
+    if (message.type === 'text') {
+      let reply
+      try {
+        reply = await handleTextMessage(context, message.text)
+      } catch (e) {
+        reply = `Error: ${e.stack}`
+      }
+      if (!reply) reply = 'no result returned'
+      if (typeof reply === 'string') reply = [{ type: 'text', text: reply }]
+      client.replyMessage(replyToken, reply)
+    } else {
+      client.replyMessage(replyToken, [
+        { type: 'text', text: 'don’t know how to handle this yet!' }
+      ])
+    }
+  }
+
+  return main()
 }
 
 app.post('/webhook', (req, res, next) => {
-  /** @type {WebtaskContext} */
   const lineConfig = getLineConfig(req)
   middleware(lineConfig)(req, res, async err => {
     if (err) return next(err)
     try {
-      const client = new Client(config)
-      const data = handleWebhook(ctx, req.body.events, client)
+      const client = new Client(lineConfig)
+      const data = await handleWebhook(req.webtaskContext, req.body.events, client)
+      console.log('Response:', data)
       res.json({ data })
     } catch (e) {
-      return next(err)
+      return next(e)
     }
   })
 })
@@ -33,7 +69,7 @@ function getLineConfig(req) {
   const ctx = req.webtaskContext
   return {
     channelAccessToken: ctx.secrets.LINE_CHANNEL_ACCESS_TOKEN,
-    channelSecret: ctx.LINE_CHANNEL_SECRET
+    channelSecret: ctx.secrets.LINE_CHANNEL_SECRET
   }
 }
 

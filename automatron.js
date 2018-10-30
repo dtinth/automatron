@@ -63,11 +63,16 @@ app.post('/webhook', (req, res, next) => {
   })
 })
 
-app.post('/post', require('body-parser').json(), (req, res, next) => {
+app.post('/post', require('body-parser').json(), async (req, res, next) => {
   try {
+    const context = req.webtaskContext
+    if (req.body.key !== context.secrets.API_KEY) {
+      return res.status(401).json({ error: 'Invalid API key' })
+    }
+    const lineConfig = getLineConfig(req)
     const client = new Client(lineConfig)
     const messages = toMessages(req.body.data)
-    await client.pushMessage(req.webtaskContext.secrets.LINE_USER_ID, messages)
+    await client.pushMessage(context.secrets.LINE_USER_ID, messages)
     res.json({ ok: true })
   } catch (e) {
     return next(e)

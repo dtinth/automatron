@@ -37,9 +37,7 @@ async function handleWebhook(context, events, client) {
       } catch (e) {
         reply = `Error: ${e.stack}`
       }
-      if (!reply) reply = 'no result returned'
-      if (typeof reply === 'string') reply = [{ type: 'text', text: reply }]
-      client.replyMessage(replyToken, reply)
+      client.replyMessage(replyToken, toMessages(reply))
     } else {
       client.replyMessage(replyToken, [
         { type: 'text', text: 'don’t know how to handle this yet!' }
@@ -58,12 +56,29 @@ app.post('/webhook', (req, res, next) => {
       const client = new Client(lineConfig)
       const data = await handleWebhook(req.webtaskContext, req.body.events, client)
       console.log('Response:', data)
-      res.json({ data })
+      res.json({ ok: true, data })
     } catch (e) {
       return next(e)
     }
   })
 })
+
+app.post('/post', require('body-parser').json(), (req, res, next) => {
+  try {
+    const client = new Client(lineConfig)
+    const messages = toMessages(req.body.data)
+    await client.pushMessage(req.webtaskContext.secrets.LINE_USER_ID, messages)
+    res.json({ ok: true })
+  } catch (e) {
+    return next(e)
+  }
+})
+
+function toMessages(data) {
+  if (!data) data = '...'
+  if (typeof data === 'string') data = [{ type: 'text', text: data }]
+  return data
+}
 
 function getLineConfig(req) {
   const ctx = req.webtaskContext

@@ -2,12 +2,12 @@
 
 This is the code of my LINE bot for personal use. It runs on [webtask.io](https://webtask.io/).
 
+## features
+
 - [home automation](#home-automation)
 - [expense tracking](#expense-tracking)
 - [transaction aggregation](#transaction-aggregation)
 - [livescript evaluation](#livescript-evaluation)
-
-## features
 
 ### home automation
 

@@ -33,7 +33,7 @@ async function handleTextMessage(context, message) {
   } else if (message === 'lights' || message === 'sticker:4:275') {
     await sendHomeCommand(context, 'lights normal')
     return 'ok, lights normal'
-  } else if (message === 'lights' || message === 'sticker:11539:52114128') {
+  } else if (message === 'bedtime' || message === 'gn' || message === 'gngn' || message === 'sticker:11539:52114128') {
     await sendHomeCommand(context, 'lights bedtime')
     return 'ok, good night'
   } else if (message.match(/^lights \w+$/)) {
@@ -129,20 +129,10 @@ async function handleWebhook(context, events, client) {
       return
     }
     if (message.type === 'text') {
-      let reply
-      try {
-        reply = await handleTextMessage(context, message.text)
-      } catch (e) {
-        reply = createErrorMessage(e)
-      }
+      const reply = await handleTextMessage(context, message.text)
       await client.replyMessage(replyToken, toMessages(reply))
     } else if (message.type === 'sticker') {
-      let reply
-      try {
-        reply = await handleTextMessage(context, 'sticker:' + message.packageId + ':' + message.stickerId)
-      } catch (e) {
-        reply = createErrorMessage(e)
-      }
+      const reply = await handleTextMessage(context, 'sticker:' + message.packageId + ':' + message.stickerId)
       await client.replyMessage(replyToken, toMessages(reply))
     } else {
       await client.replyMessage(replyToken, [
@@ -156,149 +146,120 @@ async function handleWebhook(context, events, client) {
 
 app.post('/webhook', (req, res, next) => {
   const lineConfig = getLineConfig(req)
-  const context = req.webtaskContext
   middleware(lineConfig)(req, res, async err => {
     if (err) return next(err)
-    try {
-      const client = new Client(lineConfig)
+    endpoint(async (context, req, services) => {
+      const client = services.line
       const data = await handleWebhook(context, req.body.events, client)
       console.log('Response:', data)
-      res.json({ ok: true, data })
-    } catch (e) {
-      try {
-        logError(e)
-        await client.pushMessage(context.secrets.LINE_USER_ID, createErrorMessage(e))
-      } finally {
-        return next(e)
-      }
-    }
+      return data
+    })(req, res, next)
   })
 })
 
-app.post('/post', require('body-parser').json(), async (req, res, next) => {
-  const context = req.webtaskContext
-  try {
-    if (req.body.key !== context.secrets.API_KEY) {
-      return res.status(401).json({ error: 'Invalid API key' })
-    }
-    const lineConfig = getLineConfig(req)
-    const client = new Client(lineConfig)
-    const messages = toMessages(req.body.data)
-    await client.pushMessage(context.secrets.LINE_USER_ID, messages)
-    res.json({ ok: true })
-  } catch (e) {
-    try {
-      logError(e)
-      await client.pushMessage(context.secrets.LINE_USER_ID, createErrorMessage(e))
-    } finally {
-      return next(e)
-    }
-  }
-})
+app.post('/post', require('body-parser').json(), requireApiKey, endpoint(async (context, req, services) => {
+  const client = services.line
+  const messages = toMessages(req.body.data)
+  await client.pushMessage(context.secrets.LINE_USER_ID, messages)
+}))
 
-app.post('/text', require('body-parser').json(), async (req, res, next) => {
-  const context = req.webtaskContext
-  try {
-    if (req.body.key !== context.secrets.API_KEY) {
-      return res.status(401).json({ error: 'Invalid API key' })
-    }
-    const text = String(req.body.text)
-    const lineConfig = getLineConfig(req)
-    const client = new Client(lineConfig)
-    await client.pushMessage(context.secrets.LINE_USER_ID, toMessages('received: ' + text + ` [from ${req.body.source}]`))
-    let reply
-    let error
-    try {
-      reply = await handleTextMessage(context, text)
-    } catch (e) {
-      reply = createErrorMessage(e)
-      error = e
-    }
-    await client.pushMessage(context.secrets.LINE_USER_ID, toMessages(reply))
-    res.json({ ok: !error, reply })
-  } catch (e) {
-    try {
-      logError(e)
-      await client.pushMessage(context.secrets.LINE_USER_ID, createErrorMessage(e))
-    } finally {
-      return next(e)
-    }
-  }
-})
+app.post('/text', require('body-parser').json(), requireApiKey, endpoint(async (context, req, services) => {
+  const text = String(req.body.text)
+  const client = services.line
+  await client.pushMessage(context.secrets.LINE_USER_ID, toMessages('received: ' + text + ` [from ${req.body.source}]`))
+  const reply = await handleTextMessage(context, text)
+  await client.pushMessage(context.secrets.LINE_USER_ID, toMessages(reply))
+  return reply
+}))
 
-app.post('/sms', require('body-parser').json(), async (req, res, next) => {
-  const context = req.webtaskContext
-  try {
-    if (req.body.key !== context.secrets.API_KEY) {
-      return res.status(401).json({ error: 'Invalid API key' })
-    }
-    const text = String(req.body.text)
-    const lineConfig = getLineConfig(req)
-    const client = new Client(lineConfig)
-    const { parseSMS } = require('transaction-parser-th')
-    const result = parseSMS(text)
-    if (!result || !result.amount) {
-      res.json({ ok: true, match: false })
-      return
-    }
-    console.log(result)
-    const title = result.type
-    const pay = result.type === 'pay'
-    const moneyOut = ['pay', 'transfer', 'withdraw'].includes(result.type)
-    const body = {
+app.post('/sms', require('body-parser').json(), requireApiKey, endpoint(async (context, req, services) => {
+  const text = String(req.body.text)
+  const client = services.line
+  const { parseSMS } = require('transaction-parser-th')
+  const result = parseSMS(text)
+  if (!result || !result.amount) {
+    return { match: false }
+  }
+  console.log(result)
+  const title = result.type
+  const pay = result.type === 'pay'
+  const moneyOut = ['pay', 'transfer', 'withdraw'].includes(result.type)
+  const body = {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "THB " + result.amount,
+        "size": "xxl",
+        "weight": "bold"
+      }
+    ]
+  }
+  const ordering = ['provider', 'from', 'to', 'via', 'date', 'time', 'balance']
+  const skip = ['type', 'amount']
+  const getOrder = key => (ordering.indexOf(key) + 1) || 999
+  for (const key of Object.keys(result)
+    .filter(key => !skip.includes(key))
+    .sort((a, b) => getOrder(a) - getOrder(b))
+  ) {
+    body.contents.push({
       "type": "box",
-      "layout": "vertical",
+      "layout": "horizontal",
+      "spacing": "md",
       "contents": [
         {
           "type": "text",
-          "text": "THB " + result.amount,
-          "size": "xxl",
-          "weight": "bold"
+          "text": key,
+          "align": "end",
+          "color": "#888888",
+          "flex": 2
+        },
+        {
+          "type": "text",
+          "text": String(result[key]),
+          "flex": 5
         }
       ]
-    }
-    const ordering = ['provider', 'from', 'to', 'via', 'date', 'time', 'balance']
-    const skip = ['type', 'amount']
-    const getOrder = key => (ordering.indexOf(key) + 1) || 999
-    for (const key of Object.keys(result)
-      .filter(key => !skip.includes(key))
-      .sort((a, b) => getOrder(a) - getOrder(b))
-    ) {
-      body.contents.push({
-        "type": "box",
-        "layout": "horizontal",
-        "spacing": "md",
-        "contents": [
-          {
-            "type": "text",
-            "text": key,
-            "align": "end",
-            "color": "#888888",
-            "flex": 2
-          },
-          {
-            "type": "text",
-            "text": String(result[key]),
-            "flex": 5
-          }
-        ]
-      })
-    }
-    await client.pushMessage(context.secrets.LINE_USER_ID, createBubble(title, body, {
-      headerBackground: pay ? '#91918F' : moneyOut ? '#DA9E00' : '#9471FF',
-      headerColor: '#FFFFFF',
-      altText: require('util').inspect(result)
-    }))
-    res.json({ ok: true, match: true })
-  } catch (e) {
+    })
+  }
+  await client.pushMessage(context.secrets.LINE_USER_ID, createBubble(title, body, {
+    headerBackground: pay ? '#91918F' : moneyOut ? '#DA9E00' : '#9471FF',
+    headerColor: '#FFFFFF',
+    altText: require('util').inspect(result)
+  }))
+  return { match: true }
+}))
+
+function requireApiKey(req, res, next) {
+  const context = req.webtaskContext
+  if (req.body.key !== context.secrets.API_KEY) {
+    return res.status(401).json({ error: 'Invalid API key' })
+  }
+  next()
+}
+
+function endpoint(f) {
+  return async (req, res, next) => {
+    const context = req.webtaskContext
+    const lineConfig = getLineConfig(req)
+    const client = new Client(lineConfig)
     try {
+      const result = await f(context, req, { line: client })
+      res.json({ ok: true, result })
+    } catch (e) {
+      console.error('An error has been caught in the endpoint...')
       logError(e)
-      await client.pushMessage(context.secrets.LINE_USER_ID, createErrorMessage(e))
-    } finally {
+      try {
+        await client.pushMessage(context.secrets.LINE_USER_ID, createErrorMessage(e))
+      } catch (ee) {
+        console.error('Cannot send error message to LINE!')
+        logError(ee)
+      }
       return next(e)
     }
   }
-})
+}
 
 function logError(e) {
   var response = e.response || (e.originalError && e.originalError.response)

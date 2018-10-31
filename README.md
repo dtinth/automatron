@@ -1,6 +1,6 @@
 # automatron
 
-This is the code of my LINE bot for personal use.
+This is the code of my LINE bot for personal use. It runs on [webtask.io](https://webtask.io/).
 
 - [home automation](#home-automation)
 - [expense tracking](#expense-tracking)
@@ -40,3 +40,19 @@ I [set up IFTTT to read SMS messages](https://ifttt.com/services/android_message
 `POST /text` sends a text command to automatron. This is equivalent to sending a text message through LINE. This allows me to create a CLI tool that lets me talk to automatron from my terminal.
 
 `POST /post` sends a message to my LINE account directly. This allows the [home automation](#home-automation) scripts to report back to me whenever the script is invoked.
+
+## secrets
+
+Here is the list of [secrets](https://webtask.io/docs/editor/secrets) used in this webtask:
+
+- `API_KEY` the secret key that must be sent with the request to use the [API](#cli-api)
+
+- `LINE_CHANNEL_SECRET` self-explanatory
+
+- `LINE_CHANNEL_ACCESS_TOKEN` self-explanatory
+
+- `LINE_USER_ID` my user ID, so that the bot receives commands from me only
+
+- `MQTT_URL` the URL to [CloudMQTT](https://www.cloudmqtt.com/) instance used for [home automation](#home-automation)
+
+- `EXPENSE_WEBHOOK` the [IFTTT webhook URL](https://ifttt.com/maker_webhooks) for [expense tracking](#expense-tracking)

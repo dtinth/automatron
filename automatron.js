@@ -165,6 +165,68 @@ async function handleSMS(context, client, text) {
   return { match: true }
 }
 
+// ==== UTILITY FUNCTIONS ====
+
+function toMessages(data) {
+  if (!data) data = '...'
+  if (typeof data === 'string') data = [{ type: 'text', text: data }]
+  return data
+}
+
+function createErrorMessage(error) {
+  const title = (error.name || 'Error') + (error.message ? `: ${error.message}` : '')
+  return createBubble(title, String(error.stack || error), {
+    headerBackground: '#E82822',
+    headerColor: '#ffffff',
+    textSize: 'sm'
+  })
+}
+
+function createBubble(title, text, {
+  headerBackground = '#353433',
+  headerColor = '#d7fc70',
+  textSize = 'xl',
+  altText = text
+} = {}) {
+  const data = {
+    "type": "bubble",
+    "styles": {
+      "header": {
+        "backgroundColor": headerBackground
+      }
+    },
+    "header": {
+      "type": "box",
+      "layout": "vertical",
+      "contents": [
+        {
+          "type": "text",
+          "text": title,
+          "color": headerColor,
+          "weight": "bold"
+        }
+      ]
+    },
+    "body": typeof text === 'string' ? {
+      "type": "box",
+      "layout": "vertical",
+      "contents": [
+        {
+          "type": "text",
+          "text": text,
+          "wrap": true,
+          "size": textSize
+        }
+      ]
+    } : text
+  }
+  return { type: 'flex', altText: truncate(`[${title}] ${altText}`, 400), contents: data }
+}
+
+function truncate(text, maxLength) {
+  return text.length + 5 > maxLength ? text.substr(0, maxLength - 5) + '…' : text
+}
+
 // ==== RUNTIME CODE ====
 
 /**
@@ -275,72 +337,12 @@ function logError(e) {
   }
 }
 
-function toMessages(data) {
-  if (!data) data = '...'
-  if (typeof data === 'string') data = [{ type: 'text', text: data }]
-  return data
-}
-
 function getLineConfig(req) {
   const ctx = req.webtaskContext
   return {
     channelAccessToken: ctx.secrets.LINE_CHANNEL_ACCESS_TOKEN,
     channelSecret: ctx.secrets.LINE_CHANNEL_SECRET
   }
-}
-
-function createErrorMessage(error) {
-  const title = (error.name || 'Error') + (error.message ? `: ${error.message}` : '')
-  return createBubble(title, String(error.stack || error), {
-    headerBackground: '#E82822',
-    headerColor: '#ffffff',
-    textSize: 'sm'
-  })
-}
-
-function createBubble(title, text, {
-  headerBackground = '#353433',
-  headerColor = '#d7fc70',
-  textSize = 'xl',
-  altText = text
-} = {}) {
-  const data = {
-    "type": "bubble",
-    "styles": {
-      "header": {
-        "backgroundColor": headerBackground
-      }
-    },
-    "header": {
-      "type": "box",
-      "layout": "vertical",
-      "contents": [
-        {
-          "type": "text",
-          "text": title,
-          "color": headerColor,
-          "weight": "bold"
-        }
-      ]
-    },
-    "body": typeof text === 'string' ? {
-      "type": "box",
-      "layout": "vertical",
-      "contents": [
-        {
-          "type": "text",
-          "text": text,
-          "wrap": true,
-          "size": textSize
-        }
-      ]
-    } : text
-  }
-  return { type: 'flex', altText: truncate(`[${title}] ${altText}`, 400), contents: data }
-}
-
-function truncate(text, maxLength) {
-  return text.length + 5 > maxLength ? text.substr(0, maxLength - 5) + '…' : text
 }
 
 module.exports = Webtask.fromExpress(app)

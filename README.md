@@ -27,7 +27,7 @@ Simple expense tracking by typing in the amount + category. Example: 50f means à
 
 I [set up IFTTT to read SMS messages](https://ifttt.com/services/android_messages) and send it to automatron. It then uses [transaction-parser-th](https://github.com/dtinth/transaction-parser-th) to parse SMS message and extract transaction information. It is then sent to me as a [flex message](https://developers.line.me/en/docs/messaging-api/using-flex-messages/).
 
-### livescript
+### livescript evaluation
 
 ![livescript](./images/livescript.png)
 

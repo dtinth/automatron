@@ -53,6 +53,16 @@ async function handleTextMessage(context, message) {
     }[m[2].toLowerCase()]
     await recordExpense(context, category, amount)
     return createBubble('expense tracking', `recorded expense ฿${amount} ${category}`)
+  } else if (message.startsWith('>')) {
+    const code = require('livescript').compile(message.substr(1), { bare: true })
+    console.log('Code compilation result', code)
+    const runner = new Function('prelude', 'code', 'context', 'with(prelude){return eval(code)}')
+    const result = require('util').inspect(runner(require('prelude-ls'), code, context))
+    return createBubble('livescript', result, {
+      headerBackground: '#37BF00',
+      headerColor: '#ffffff',
+      textSize: 'sm'
+    })
   }
   return 'unrecognized message! ' + message
 }
@@ -146,23 +156,28 @@ async function handleWebhook(context, events, client) {
 
 app.post('/webhook', (req, res, next) => {
   const lineConfig = getLineConfig(req)
+  const context = req.webtaskContext
   middleware(lineConfig)(req, res, async err => {
     if (err) return next(err)
     try {
       const client = new Client(lineConfig)
-      const data = await handleWebhook(req.webtaskContext, req.body.events, client)
+      const data = await handleWebhook(context, req.body.events, client)
       console.log('Response:', data)
       res.json({ ok: true, data })
     } catch (e) {
-      logError(e)
-      return next(e)
+      try {
+        logError(e)
+        await client.pushMessage(context.secrets.LINE_USER_ID, createErrorMessage(e))
+      } finally {
+        return next(e)
+      }
     }
   })
 })
 
 app.post('/post', require('body-parser').json(), async (req, res, next) => {
+  const context = req.webtaskContext
   try {
-    const context = req.webtaskContext
     if (req.body.key !== context.secrets.API_KEY) {
       return res.status(401).json({ error: 'Invalid API key' })
     }
@@ -172,14 +187,18 @@ app.post('/post', require('body-parser').json(), async (req, res, next) => {
     await client.pushMessage(context.secrets.LINE_USER_ID, messages)
     res.json({ ok: true })
   } catch (e) {
-    logError(e)
-    return next(e)
+    try {
+      logError(e)
+      await client.pushMessage(context.secrets.LINE_USER_ID, createErrorMessage(e))
+    } finally {
+      return next(e)
+    }
   }
 })
 
 app.post('/text', require('body-parser').json(), async (req, res, next) => {
+  const context = req.webtaskContext
   try {
-    const context = req.webtaskContext
     if (req.body.key !== context.secrets.API_KEY) {
       return res.status(401).json({ error: 'Invalid API key' })
     }
@@ -198,8 +217,12 @@ app.post('/text', require('body-parser').json(), async (req, res, next) => {
     await client.pushMessage(context.secrets.LINE_USER_ID, toMessages(reply))
     res.json({ ok: !error, reply })
   } catch (e) {
-    logError(e)
-    return next(e)
+    try {
+      logError(e)
+      await client.pushMessage(context.secrets.LINE_USER_ID, createErrorMessage(e))
+    } finally {
+      return next(e)
+    }
   }
 })
 

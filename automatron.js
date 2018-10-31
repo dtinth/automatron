@@ -226,6 +226,80 @@ app.post('/text', require('body-parser').json(), async (req, res, next) => {
   }
 })
 
+app.post('/sms', require('body-parser').json(), async (req, res, next) => {
+  const context = req.webtaskContext
+  try {
+    if (req.body.key !== context.secrets.API_KEY) {
+      return res.status(401).json({ error: 'Invalid API key' })
+    }
+    const text = String(req.body.text)
+    const lineConfig = getLineConfig(req)
+    const client = new Client(lineConfig)
+    const { parseSMS } = require('transaction-parser-th')
+    const result = parseSMS(text)
+    if (!result || !result.amount) {
+      res.json({ ok: true, match: false })
+      return
+    }
+    console.log(result)
+    const title = result.type
+    const pay = result.type === 'pay'
+    const moneyOut = ['pay', 'transfer', 'withdraw'].includes(result.type)
+    const body = {
+      "type": "box",
+      "layout": "vertical",
+      "contents": [
+        {
+          "type": "text",
+          "text": "THB " + result.amount,
+          "size": "xxl",
+          "weight": "bold"
+        }
+      ]
+    }
+    const ordering = ['provider', 'from', 'to', 'via', 'date', 'time', 'balance']
+    const skip = ['type', 'amount']
+    const getOrder = key => (ordering.indexOf(key) + 1) || 999
+    for (const key of Object.keys(result)
+      .filter(key => !skip.includes(key))
+      .sort((a, b) => getOrder(a) - getOrder(b))
+    ) {
+      body.contents.push({
+        "type": "box",
+        "layout": "horizontal",
+        "spacing": "md",
+        "contents": [
+          {
+            "type": "text",
+            "text": key,
+            "align": "end",
+            "color": "#888888",
+            "flex": 2
+          },
+          {
+            "type": "text",
+            "text": String(result[key]),
+            "flex": 5
+          }
+        ]
+      })
+    }
+    await client.pushMessage(context.secrets.LINE_USER_ID, createBubble(title, body, {
+      headerBackground: pay ? '#91918F' : moneyOut ? '#DA9E00' : '#9471FF',
+      headerColor: '#FFFFFF',
+      altText: require('util').inspect(result)
+    }))
+    res.json({ ok: true, match: true })
+  } catch (e) {
+    try {
+      logError(e)
+      await client.pushMessage(context.secrets.LINE_USER_ID, createErrorMessage(e))
+    } finally {
+      return next(e)
+    }
+  }
+})
+
 function logError(e) {
   var response = e.response || (e.originalError && e.originalError.response)
   var data = response && response.data
@@ -260,7 +334,8 @@ function createErrorMessage(error) {
 function createBubble(title, text, {
   headerBackground = '#353433',
   headerColor = '#d7fc70',
-  textSize = 'xl'
+  textSize = 'xl',
+  altText = text
 } = {}) {
   const data = {
     "type": "bubble",
@@ -281,7 +356,7 @@ function createBubble(title, text, {
         }
       ]
     },
-    "body": {
+    "body": typeof text === 'string' ? {
       "type": "box",
       "layout": "vertical",
       "contents": [
@@ -292,9 +367,9 @@ function createBubble(title, text, {
           "size": textSize
         }
       ]
-    }
+    } : text
   }
-  return { type: 'flex', altText: truncate(`[${title}] ${text}`, 400), contents: data }
+  return { type: 'flex', altText: truncate(`[${title}] ${altText}`, 400), contents: data }
 }
 
 function truncate(text, maxLength) {

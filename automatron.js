@@ -7,6 +7,8 @@ const Client = require('@line/bot-sdk').Client
 const app = express()
 const axios = require('axios')
 
+// ==== MAIN BOT LOGIC ====
+
 /**
  * @param {WebtaskContext} context
  * @param {string} message
@@ -105,6 +107,64 @@ async function recordExpense(context, amount, category) {
   })
 }
 
+// ==== SMS HANDLING ====
+
+async function handleSMS(context, client, text) {
+  const { parseSMS } = require('transaction-parser-th')
+  const result = parseSMS(text)
+  if (!result || !result.amount)return { match: false }
+
+  console.log('SMS parsing result', result)
+  const title = result.type
+  const pay = result.type === 'pay'
+  const moneyOut = ['pay', 'transfer', 'withdraw'].includes(result.type)
+  const body = {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "THB " + result.amount,
+        "size": "xxl",
+        "weight": "bold"
+      }
+    ]
+  }
+  const ordering = ['provider', 'from', 'to', 'via', 'date', 'time', 'balance']
+  const skip = ['type', 'amount']
+  const getOrder = key => (ordering.indexOf(key) + 1) || 999
+  for (const key of Object.keys(result)
+    .filter(key => !skip.includes(key))
+    .sort((a, b) => getOrder(a) - getOrder(b))
+  ) {
+    body.contents.push({
+      "type": "box",
+      "layout": "horizontal",
+      "spacing": "md",
+      "contents": [
+        {
+          "type": "text",
+          "text": key,
+          "align": "end",
+          "color": "#888888",
+          "flex": 2
+        },
+        {
+          "type": "text",
+          "text": String(result[key]),
+          "flex": 5
+        }
+      ]
+    })
+  }
+  await client.pushMessage(context.secrets.LINE_USER_ID, createBubble(title, body, {
+    headerBackground: pay ? '#91918F' : moneyOut ? '#DA9E00' : '#9471FF',
+    headerColor: '#FFFFFF',
+    altText: require('util').inspect(result)
+  }))
+  return { match: true }
+}
+
 // ==== RUNTIME CODE ====
 
 /**
@@ -174,61 +234,7 @@ app.post('/text', require('body-parser').json(), requireApiKey, endpoint(async (
 
 app.post('/sms', require('body-parser').json(), requireApiKey, endpoint(async (context, req, services) => {
   const text = String(req.body.text)
-  const client = services.line
-  const { parseSMS } = require('transaction-parser-th')
-  const result = parseSMS(text)
-  if (!result || !result.amount) {
-    return { match: false }
-  }
-  console.log(result)
-  const title = result.type
-  const pay = result.type === 'pay'
-  const moneyOut = ['pay', 'transfer', 'withdraw'].includes(result.type)
-  const body = {
-    "type": "box",
-    "layout": "vertical",
-    "contents": [
-      {
-        "type": "text",
-        "text": "THB " + result.amount,
-        "size": "xxl",
-        "weight": "bold"
-      }
-    ]
-  }
-  const ordering = ['provider', 'from', 'to', 'via', 'date', 'time', 'balance']
-  const skip = ['type', 'amount']
-  const getOrder = key => (ordering.indexOf(key) + 1) || 999
-  for (const key of Object.keys(result)
-    .filter(key => !skip.includes(key))
-    .sort((a, b) => getOrder(a) - getOrder(b))
-  ) {
-    body.contents.push({
-      "type": "box",
-      "layout": "horizontal",
-      "spacing": "md",
-      "contents": [
-        {
-          "type": "text",
-          "text": key,
-          "align": "end",
-          "color": "#888888",
-          "flex": 2
-        },
-        {
-          "type": "text",
-          "text": String(result[key]),
-          "flex": 5
-        }
-      ]
-    })
-  }
-  await client.pushMessage(context.secrets.LINE_USER_ID, createBubble(title, body, {
-    headerBackground: pay ? '#91918F' : moneyOut ? '#DA9E00' : '#9471FF',
-    headerColor: '#FFFFFF',
-    altText: require('util').inspect(result)
-  }))
-  return { match: true }
+  return await handleSMS(context, services.line, text)
 }))
 
 function requireApiKey(req, res, next) {

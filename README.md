@@ -27,6 +27,14 @@ Simple expense tracking by typing in the amount + category. Example: 50f means à
 
 I [set up IFTTT to read SMS messages](https://ifttt.com/services/android_messages) and send it to automatron. It then uses [transaction-parser-th](https://github.com/dtinth/transaction-parser-th) to parse SMS message and extract transaction information. It is then sent to me as a [flex message](https://developers.line.me/en/docs/messaging-api/using-flex-messages/).
 
+![quick_replies](./images/quick_replies.png)
+
+In mobile phone, [quick reply buttons](https://developers.line.me/en/docs/messaging-api/using-quick-reply/) lets me quickly turn a transaction into an expense record by simply tapping on the category.
+
+![auto_expense](./images/auto_expense.png)
+
+Certain kinds of transactions can be automatically be turned into an expense, for example, when I [take BTS Skytrain using Rabbit LINE Pay card](https://brandinside.asia/rabbit-line-pay-bts/). Having many features in one bot enabled this kind of tight integrations.
+
 ### livescript evaluation
 
 ![livescript](./images/livescript.png)

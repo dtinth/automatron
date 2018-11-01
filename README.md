@@ -19,7 +19,7 @@ I have a Raspberry Pi set up which can [control lights](https://github.com/dtint
 
 ![expense tracking](./images/expense_tracking.png)
 
-Simple expense tracking by typing in the amount + category. Example: 50f means ฿50 for food. Data is sent [to IFTTT, which records the expense in Google Sheets](https://ifttt.com/services/google_sheets).
+Simple expense tracking by typing in the amount + category. Example: 50f means ฿50 for food. Data is sent to [Airtable](https://airtable.com/).
 
 ### transaction aggregation
 
@@ -63,4 +63,10 @@ Here is the list of [secrets](https://webtask.io/docs/editor/secrets) used in th
 
 - `MQTT_URL` the URL to [CloudMQTT](https://www.cloudmqtt.com/) instance used for [home automation](#home-automation)
 
-- `EXPENSE_WEBHOOK` the [IFTTT webhook URL](https://ifttt.com/maker_webhooks) for [expense tracking](#expense-tracking)
+- `AIRTABLE_API_KEY` self-explanatory
+
+- `AIRTABLE_EXPENSE_BASE` the ID of the Airtable base used for [tracking expenses](#expense-tracking) (should start with ‘app’)
+
+- `AIRTABLE_EXPENSE_URI` the web URL to the Airtable base
+
+- `EXPENSE_PACEMAKER` usage budget per day (rolls over to the next day)

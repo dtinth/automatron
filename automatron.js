@@ -6,6 +6,7 @@ const middleware = require('@line/bot-sdk').middleware
 const Client = require('@line/bot-sdk').Client
 const app = express()
 const axios = require('axios')
+const Airtable = require('airtable')
 
 // ==== MAIN BOT LOGIC ====
 
@@ -182,14 +183,62 @@ async function sendHomeCommand(context, cmd) {
  * @param {string} amount
  */
 async function recordExpense(context, amount, category) {
-  await axios.post(context.secrets.EXPENSE_WEBHOOK, {
-    value1: new Date().toJSON().split('T')[0],
-    value2: category,
-    value3: amount,
+  const date = new Date().toJSON().split('T')[0]
+
+  // // Google Sheets
+  // await axios.post(context.secrets.EXPENSE_WEBHOOK, {
+  //   value1: date,
+  //   value2: category,
+  //   value3: amount,
+  // })
+  
+  // Airtable
+  const table = new Airtable({ apiKey: context.secrets.AIRTABLE_API_KEY })
+    .base(context.secrets.AIRTABLE_EXPENSE_BASE)
+    .table('Expense records')
+
+  const record = await table.create({
+    Date: date,
+    Category: category,
+    Amount: amount
+  }, { typecast: true })
+
+  const tableData = await table.select().all()
+  const total = records => records.map(r => +r.get('Amount') || 0).reduce((a, b) => a + b, 0)
+  const firstDate = tableData.map(r => r.get('Date')).reduce((a, b) => a < b ? a : b, date)
+  const todayUsage = total(tableData.filter(r => r.get('Date') === date))
+  const totalUsage = total(tableData)
+  const dayNumber = Math.round((Date.parse(date) - Date.parse(firstDate)) / 86400e3) + 1
+  const pacemaker = +context.secrets.EXPENSE_PACEMAKER * dayNumber - totalUsage
+  const $ = v => `฿${v.toFixed(2)}`
+  const footer = [
+    ['today', $(todayUsage)],
+    ['pace', $(pacemaker)],
+    ['day', `${dayNumber}`]
+  ]
+
+  const bubble = createBubble('expense tracking', `฿${amount} ${category}\nrecorded`, {
+    headerColor: '#ffffbb',
+    footer: {
+      type: 'box',
+      layout: 'horizontal',
+      spacing: 'sm',
+      contents: footer.map(([label, text]) => ({
+        type: 'box',
+        layout: 'vertical',
+        contents: [
+          { type: 'text', text: label, color: '#8b8685', size: 'xs', align: 'end' },
+          { type: 'text', text: text, color: '#8b8685', size: 'sm', align: 'end' }
+        ]
+      })),
+      action: {
+        type: 'uri',
+        label: 'Open Airtable',
+        uri: context.secrets.AIRTABLE_EXPENSE_URI
+      }
+    }
   })
-  return createBubble('expense tracking', `฿${amount} ${category}\nrecorded`, {
-    headerColor: '#ffffbb'
-  })
+  return bubble
 }
 
 // ==== UTILITY FUNCTIONS ====
@@ -209,45 +258,64 @@ function createErrorMessage(error) {
   })
 }
 
-function createBubble(title, text, {
-  headerBackground = '#353433',
-  headerColor = '#d7fc70',
-  textSize = 'xl',
-  altText = text
-} = {}) {
+function createBubble(
+  title,
+  text,
+  {
+    headerBackground = '#353433',
+    headerColor = '#d7fc70',
+    textSize = 'xl',
+    altText = text,
+    footer,
+  } = {}
+) {
   const data = {
-    "type": "bubble",
-    "styles": {
-      "header": {
-        "backgroundColor": headerBackground
-      }
+    type: 'bubble',
+    styles: {
+      header: { backgroundColor: headerBackground },
     },
-    "header": {
-      "type": "box",
-      "layout": "vertical",
-      "contents": [
-        {
-          "type": "text",
-          "text": title,
-          "color": headerColor,
-          "weight": "bold"
-        }
-      ]
+    header: {
+      type: 'box',
+      layout: 'vertical',
+      contents: [
+        { type: 'text', text: title, color: headerColor, weight: 'bold' },
+      ],
     },
-    "body": typeof text === 'string' ? {
-      "type": "box",
-      "layout": "vertical",
-      "contents": [
-        {
-          "type": "text",
-          "text": text,
-          "wrap": true,
-          "size": textSize
-        }
-      ]
-    } : text
+    body:
+      typeof text === 'string'
+        ? {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              { type: 'text', text: text, wrap: true, size: textSize },
+            ],
+          }
+        : text,
   }
-  return { type: 'flex', altText: truncate(`[${title}] ${altText}`, 400), contents: data }
+  if (footer) {
+    data.styles.footer = { backgroundColor: '#e9e8e7' }
+    data.footer =
+      typeof footer === 'string'
+        ? {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'text',
+                text: footer,
+                wrap: true,
+                size: 'sm',
+                color: '#8b8685',
+              },
+            ],
+          }
+        : footer
+  }
+  return {
+    type: 'flex',
+    altText: truncate(`[${title}] ${altText}`, 400),
+    contents: data,
+  }
 }
 
 function truncate(text, maxLength) {

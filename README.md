@@ -53,20 +53,14 @@ Certain kinds of transactions can be automatically be turned into an expense, fo
 
 Here is the list of [secrets](https://webtask.io/docs/editor/secrets) used in this webtask:
 
-- `API_KEY` the secret key that must be sent with the request to use the [API](#cli-api)
-
-- `LINE_CHANNEL_SECRET` self-explanatory
-
-- `LINE_CHANNEL_ACCESS_TOKEN` self-explanatory
-
-- `LINE_USER_ID` my user ID, so that the bot receives commands from me only
-
-- `MQTT_URL` the URL to [CloudMQTT](https://www.cloudmqtt.com/) instance used for [home automation](#home-automation)
-
-- `AIRTABLE_API_KEY` self-explanatory
-
-- `AIRTABLE_EXPENSE_BASE` the ID of the Airtable base used for [tracking expenses](#expense-tracking) (should start with ‘app’)
-
-- `AIRTABLE_EXPENSE_URI` the web URL to the Airtable base
-
-- `EXPENSE_PACEMAKER` usage budget per day (rolls over to the next day)
+| name | explanation |
+| ---- | ----------- |
+| `API_KEY` | the secret key that must be sent with the request to use the [API](#cli-api) |
+| `LINE_CHANNEL_SECRET` | self-explanatory |
+| `LINE_CHANNEL_ACCESS_TOKEN` | self-explanatory |
+| `LINE_USER_ID` | my user ID, so that the bot receives commands from me only |
+| `MQTT_URL` | the URL to [CloudMQTT](https://www.cloudmqtt.com/) instance used for [home automation](#home-automation) |
+| `AIRTABLE_API_KEY` | self-explanatory |
+| `AIRTABLE_EXPENSE_BASE` | the ID of the Airtable base used for [tracking expenses](#expense-tracking) (should start with ‘app’) |
+| `AIRTABLE_EXPENSE_URI` | the web URL to the Airtable base |
+| `EXPENSE_PACEMAKER` | usage budget per day (rolls over to the next day) |

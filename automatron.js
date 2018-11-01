@@ -44,7 +44,7 @@ async function handleTextMessage(context, message) {
     return 'ok, lights ' + cmd
   } else if (message.match(/^[\d.]+[tfghmo]$/i)) {
     const m = message.match(/^([\d.]+)([tfghmo])$/i)
-    const amount = Math.round(+m[1], 2)
+    const amount = (+m[1]).toFixed(2)
     const category = {
       t: 'transportation',
       f: 'food',
@@ -53,8 +53,7 @@ async function handleTextMessage(context, message) {
       m: 'miscellaneous',
       o: 'occasion'
     }[m[2].toLowerCase()]
-    await recordExpense(context, category, amount)
-    return createBubble('expense tracking', `recorded expense ฿${amount} ${category}`)
+    return await recordExpense(context, amount, category)
   } else if (message.startsWith('>')) {
     const code = require('livescript').compile(message.substr(1), { bare: true })
     console.log('Code compilation result', code)
@@ -67,6 +66,89 @@ async function handleTextMessage(context, message) {
     })
   }
   return 'unrecognized message! ' + message
+}
+
+// ==== SMS HANDLING ====
+
+async function handleSMS(context, client, text) {
+  const { parseSMS } = require('transaction-parser-th')
+  const result = parseSMS(text)
+  if (!result || !result.amount)return { match: false }
+
+  console.log('SMS parsing result', result)
+  const title = result.type
+  const pay = result.type === 'pay'
+  const moneyOut = ['pay', 'transfer', 'withdraw'].includes(result.type)
+  const body = {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "฿" + result.amount,
+        "size": "xxl",
+        "weight": "bold"
+      }
+    ]
+  }
+  const ordering = ['provider', 'from', 'to', 'via', 'date', 'time', 'balance']
+  const skip = ['type', 'amount']
+  const getOrder = key => (ordering.indexOf(key) + 1) || 999
+  for (const key of Object.keys(result)
+    .filter(key => !skip.includes(key))
+    .sort((a, b) => getOrder(a) - getOrder(b))
+  ) {
+    body.contents.push({
+      "type": "box",
+      "layout": "horizontal",
+      "spacing": "md",
+      "contents": [
+        {
+          "type": "text",
+          "text": key,
+          "align": "end",
+          "color": "#888888",
+          "flex": 2
+        },
+        {
+          "type": "text",
+          "text": String(result[key]),
+          "flex": 5
+        }
+      ]
+    })
+  }
+  const quickReply = (suffix, label) => ({
+    type: 'action',
+    action: {
+      type: 'message',
+      label: label,
+      text: result.amount + suffix
+    }
+  })
+  const messages = [
+    {
+      ...createBubble(title, body, {
+        headerBackground: pay ? '#91918F' : moneyOut ? '#DA9E00' : '#9471FF',
+        headerColor: '#FFFFFF',
+        altText: require('util').inspect(result)
+      }),
+      quickReply: {
+        items: [
+          quickReply('f', 'food'),
+          quickReply('h', 'health'),
+          quickReply('t', 'transport'),
+          quickReply('m', 'misc'),
+          quickReply('o', 'occasion')
+        ]
+      }
+    }
+  ]
+  if (result.type === 'pay' && result.to === 'LINEPAY*BTS01') {
+    messages.push(await recordExpense(context, result.amount, 'transportation'))
+  }
+  await client.pushMessage(context.secrets.LINE_USER_ID, messages)
+  return { match: true }
 }
 
 // ==== SERVICE FUNCTIONS ====
@@ -102,67 +184,12 @@ async function sendHomeCommand(context, cmd) {
 async function recordExpense(context, amount, category) {
   await axios.post(context.secrets.EXPENSE_WEBHOOK, {
     value1: new Date().toJSON().split('T')[0],
-    value2: amount,
-    value3: category,
+    value2: category,
+    value3: amount,
   })
-}
-
-// ==== SMS HANDLING ====
-
-async function handleSMS(context, client, text) {
-  const { parseSMS } = require('transaction-parser-th')
-  const result = parseSMS(text)
-  if (!result || !result.amount)return { match: false }
-
-  console.log('SMS parsing result', result)
-  const title = result.type
-  const pay = result.type === 'pay'
-  const moneyOut = ['pay', 'transfer', 'withdraw'].includes(result.type)
-  const body = {
-    "type": "box",
-    "layout": "vertical",
-    "contents": [
-      {
-        "type": "text",
-        "text": "THB " + result.amount,
-        "size": "xxl",
-        "weight": "bold"
-      }
-    ]
-  }
-  const ordering = ['provider', 'from', 'to', 'via', 'date', 'time', 'balance']
-  const skip = ['type', 'amount']
-  const getOrder = key => (ordering.indexOf(key) + 1) || 999
-  for (const key of Object.keys(result)
-    .filter(key => !skip.includes(key))
-    .sort((a, b) => getOrder(a) - getOrder(b))
-  ) {
-    body.contents.push({
-      "type": "box",
-      "layout": "horizontal",
-      "spacing": "md",
-      "contents": [
-        {
-          "type": "text",
-          "text": key,
-          "align": "end",
-          "color": "#888888",
-          "flex": 2
-        },
-        {
-          "type": "text",
-          "text": String(result[key]),
-          "flex": 5
-        }
-      ]
-    })
-  }
-  await client.pushMessage(context.secrets.LINE_USER_ID, createBubble(title, body, {
-    headerBackground: pay ? '#91918F' : moneyOut ? '#DA9E00' : '#9471FF',
-    headerColor: '#FFFFFF',
-    altText: require('util').inspect(result)
-  }))
-  return { match: true }
+  return createBubble('expense tracking', `฿${amount} ${category}\nrecorded`, {
+    headerColor: '#ffffbb'
+  })
 }
 
 // ==== UTILITY FUNCTIONS ====

@@ -15,6 +15,7 @@ It is written in JavaScript and runs on [webtask.io](https://webtask.io/) platfo
 - [home automation](#home-automation)
 - [expense tracking](#expense-tracking)
 - [transaction aggregation](#transaction-aggregation)
+- [image-to-text](#image-to-text)
 - [livescript evaluation](#livescript-evaluation)
 
 ### home automation
@@ -42,6 +43,12 @@ In mobile phone, [quick reply buttons](https://developers.line.me/en/docs/messag
 ![auto_expense](./images/auto_expense.png)
 
 Certain kinds of transactions can be automatically be turned into an expense, for example, when I [take BTS Skytrain using Rabbit LINE Pay card](https://brandinside.asia/rabbit-line-pay-bts/). Having many features in one bot enabled this kind of tight integrations.
+
+### image-to-text
+
+![image_to_text](./images/image_to_text.png)
+
+automatron can also convert image to text using [Google Cloud Vision API](https://cloud.google.com/vision/).
 
 ### livescript evaluation
 
@@ -72,3 +79,4 @@ Here is the list of [secrets](https://webtask.io/docs/editor/secrets) used in th
 | `AIRTABLE_EXPENSE_BASE` | the ID of the Airtable base used for [tracking expenses](#expense-tracking) (should start with ‘app’) |
 | `AIRTABLE_EXPENSE_URI` | the web URL to the Airtable base |
 | `EXPENSE_PACEMAKER` | usage budget per day (rolls over to the next day) |
+| `CLOUD_VISION_SERVICE_ACCOUNT` | the contents of Google Cloud service account JSON file, base64-encoded, for use with Cloud Vision |

@@ -146,7 +146,7 @@ async function handleSMS(context, client, text) {
     }
   ]
   if (result.type === 'pay' && result.to === 'LINEPAY*BTS01') {
-    messages.push(await recordExpense(context, result.amount, 'transportation'))
+    messages.push(await recordExpense(context, result.amount, 'transportation', 'BTS'))
   }
   await client.pushMessage(context.secrets.LINE_USER_ID, messages)
   return { match: true }
@@ -182,7 +182,7 @@ async function sendHomeCommand(context, cmd) {
  * @param {string} category
  * @param {string} amount
  */
-async function recordExpense(context, amount, category) {
+async function recordExpense(context, amount, category, remarks = '') {
   const date = new Date().toJSON().split('T')[0]
 
   // // Google Sheets
@@ -200,7 +200,8 @@ async function recordExpense(context, amount, category) {
   const record = await table.create({
     Date: date,
     Category: category,
-    Amount: amount
+    Amount: amount,
+    Remarks: remarks
   }, { typecast: true })
 
   const tableData = await table.select().all()

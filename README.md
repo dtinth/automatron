@@ -28,7 +28,9 @@ I have a Raspberry Pi set up which can [control lights](https://github.com/dtint
 
 ![expense tracking](./images/expense_tracking.png)
 
-Simple expense tracking by typing in the amount + category. Example: 50f means ฿50 for food. Data is sent to [Airtable](https://airtable.com/).
+Simple expense tracking by typing in the amount + category. Example: 50f means ฿50 for food. Data is saved in [Airtable](https://airtable.com/).
+
+On mobile, tapping the bubble’s body (containing the amount) will take me to the created Airtable record. This allows me to easily edit or add remarks to the record. Tapping the bubble’s footer (containing the stats) will take me to Airtable view, which lets me see all the recorded data.
 
 ### transaction aggregation
 

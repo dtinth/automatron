@@ -7,6 +7,7 @@ const Client = require('@line/bot-sdk').Client
 const app = express()
 const axios = require('axios')
 const Airtable = require('airtable')
+const vision = require('@google-cloud/vision')
 
 // ==== MAIN BOT LOGIC ====
 
@@ -150,6 +151,36 @@ async function handleSMS(context, client, text) {
   }
   await client.pushMessage(context.secrets.LINE_USER_ID, messages)
   return { match: true }
+}
+
+async function handleImage(context, imageBuffer) {
+  const credentials = JSON.parse(
+    Buffer.from(context.secrets.CLOUD_VISION_SERVICE_ACCOUNT, 'base64').toString()
+  )
+  const imageAnnotator = new vision.ImageAnnotatorClient({ credentials })
+  const results = await imageAnnotator.documentTextDetection(imageBuffer)
+  const fullTextAnnotation = results[0].fullTextAnnotation
+  const blocks = []
+  for (const page of fullTextAnnotation.pages) {
+    blocks.push(...page.blocks.map(block => {
+      return block.paragraphs.map(p =>
+        p.words.map(w => w.symbols.map(s => s.text).join('')).join(' ')
+      ).join('\n\n')
+    }))
+  }
+  const blocksToResponses = blocks => {
+    if (blocks.length <= 5) return blocks
+    let processedIndex = 0
+    const outBlocks = []
+    for (let i = 0; i < 5; i++) {
+      const targetIndex = Math.ceil((i + 1) * blocks.length / 5)
+      outBlocks.push(blocks.slice(processedIndex, targetIndex).join('\n---\n'))
+      processedIndex = targetIndex
+    }
+    return outBlocks
+  }
+  const responses = blocksToResponses(blocks)
+  return responses.map(r => ({ type: 'text', text: r }))
 }
 
 // ==== SERVICE FUNCTIONS ====
@@ -375,6 +406,11 @@ async function handleWebhook(context, events, client) {
     } else if (message.type === 'sticker') {
       const reply = await handleTextMessage(context, 'sticker:' + message.packageId + ':' + message.stickerId)
       await client.replyMessage(replyToken, toMessages(reply))
+    } else if (message.type === 'image') {
+      const content = await client.getMessageContent(message.id)
+      const buffer = await readAsBuffer(content)
+      const reply = await handleImage(context, buffer)
+      await client.replyMessage(replyToken, toMessages(reply))
     } else {
       await client.replyMessage(replyToken, [
         { type: 'text', text: 'don’t know how to handle this yet!' }
@@ -462,6 +498,21 @@ function getLineConfig(req) {
     channelAccessToken: ctx.secrets.LINE_CHANNEL_ACCESS_TOKEN,
     channelSecret: ctx.secrets.LINE_CHANNEL_SECRET
   }
+}
+
+function readAsBuffer(stream) {
+  return new Promise((resolve, reject) => {
+    stream.on('error', e => {
+      reject(e)
+    })
+    const bufs = []
+    stream.on('end', () => {
+      resolve(Buffer.concat(bufs))
+    })
+    stream.on('data', buf => {
+      bufs.push(buf)
+    })
+  })
 }
 
 module.exports = Webtask.fromExpress(app)

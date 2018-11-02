@@ -1,6 +1,14 @@
 # automatron
 
-This is the code of my LINE bot for personal use. It runs on [webtask.io](https://webtask.io/).
+This is my personal LINE bot that helps me automate various tasks of everyday life, such as
+**home control** (air conditioner, lights and plugs) and **expense tracking** (record how much I spend each day).
+[See below for a feature tour.](#features)
+
+I recommend every developer to try creating their own personal assistant chat bot.
+It’s a great way to practice coding and improve problem solving skills.
+And it helps make life more convenient!
+
+It is written in JavaScript and runs on [webtask.io](https://webtask.io/) platform.
 
 ## features
 

@@ -218,7 +218,30 @@ async function recordExpense(context, amount, category, remarks = '') {
     ['day', `${dayNumber}`]
   ]
 
-  const bubble = createBubble('expense tracking', `฿${amount} ${category}\nrecorded`, {
+  const body = {
+    "type": "box",
+    "layout": "vertical",
+    "contents": [
+      {
+        "type": "text",
+        "text": "฿" + amount,
+        "size": "xxl",
+        "weight": "bold"
+      },
+      {
+        "type": "text",
+        "text": `${category}\nrecorded`,
+        "wrap": true
+      }
+    ],
+    action: {
+      type: 'uri',
+      label: 'Open Airtable',
+      uri: context.secrets.AIRTABLE_EXPENSE_URI + '/' + record.getId()
+    }
+  }
+
+  const bubble = createBubble('expense tracking', body, {
     headerColor: '#ffffbb',
     footer: {
       type: 'box',

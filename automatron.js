@@ -44,18 +44,20 @@ async function handleTextMessage(context, message) {
     const cmd = message.split(' ')[1]
     await sendHomeCommand(context, 'lights ' + cmd)
     return 'ok, lights ' + cmd
-  } else if (message.match(/^[\d.]+[tfghmo]$/i)) {
-    const m = message.match(/^([\d.]+)([tfghmo])$/i)
-    const amount = (+m[1]).toFixed(2)
+  } else if (message.match(/^[\d.]+j?[tfghmol]$/i)) {
+    const m = message.match(/^([\d.]+)(j?)([tfghmol])$/i)
+    const amount = (+m[1] * (m[2] ? 0.302909 : 1)).toFixed(2)
     const category = {
       t: 'transportation',
       f: 'food',
       g: 'game',
       h: 'health',
       m: 'miscellaneous',
-      o: 'occasion'
-    }[m[2].toLowerCase()]
-    return await recordExpense(context, amount, category)
+      o: 'occasion',
+      l: 'lodging'
+    }[m[3].toLowerCase()]
+    const remarks = m[2] ? `${m[1]} JPY` : ''
+    return await recordExpense(context, amount, category, remarks)
   } else if (message.startsWith('>')) {
     const code = require('livescript').compile(message.substr(1), { bare: true })
     console.log('Code compilation result', code)
@@ -216,13 +218,6 @@ async function sendHomeCommand(context, cmd) {
 async function recordExpense(context, amount, category, remarks = '') {
   const date = new Date().toJSON().split('T')[0]
 
-  // // Google Sheets
-  // await axios.post(context.secrets.EXPENSE_WEBHOOK, {
-  //   value1: date,
-  //   value2: category,
-  //   value3: amount,
-  // })
-  
   // Airtable
   const table = new Airtable({ apiKey: context.secrets.AIRTABLE_API_KEY })
     .base(context.secrets.AIRTABLE_EXPENSE_BASE)
@@ -245,7 +240,8 @@ async function recordExpense(context, amount, category, remarks = '') {
   const $ = v => `฿${v.toFixed(2)}`
   const footer = [
     ['today', $(todayUsage)],
-    ['pace', $(pacemaker)],
+    // ['pace', $(pacemaker)],
+    ['trip total', $(totalUsage)],
     ['day', `${dayNumber}`]
   ]
 

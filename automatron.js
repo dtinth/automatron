@@ -61,13 +61,40 @@ async function handleTextMessage(context, message) {
   } else if (message.startsWith('>')) {
     const code = require('livescript').compile(message.substr(1), { bare: true })
     console.log('Code compilation result', code)
-    const runner = new Function('prelude', 'code', 'context', 'with(prelude){return eval(code)}')
-    const result = require('util').inspect(runner(require('prelude-ls'), code, context))
-    return createBubble('livescript', result, {
-      headerBackground: '#37BF00',
-      headerColor: '#ffffff',
-      textSize: 'sm'
+    const runner = new Function(
+      ...['prelude', 'code', 'context', 'state'],
+      'with (prelude) { with (state) { return [ eval(code), state ] } }'
+    )
+    const prevStateSnapshot = await new Promise((resolve, reject) => {
+      context.storage.get((error, data) => error ? reject(error) : resolve(data))
     })
+      .then(data => (data || {}).jsState || '{}')
+    const prevState = JSON.parse(prevStateSnapshot)
+    const [value, nextState] = runner(require('prelude-ls'), code, context, prevState)
+    let result = require('util').inspect(value)
+    const extraMessages = []
+    const nextStateSnapshot = JSON.stringify(nextState)
+    if (nextStateSnapshot !== prevStateSnapshot) {
+      extraMessages.push({
+        type: 'text',
+        text: 'state = ' + JSON.stringify(nextState, null, 2)
+      })
+      await new Promise((resolve, reject) => {
+        context.storage.set(
+          { jsState: nextStateSnapshot },
+          (error) => error ? reject(error) : resolve()
+        )
+      })
+    }
+    return [
+      // createBubble('livescript', result, {
+      //   headerBackground: '#37BF00',
+      //   headerColor: '#ffffff',
+      //   textSize: 'sm'
+      // }),
+      { type: 'text', text: result },
+      ...extraMessages
+    ]
   }
   return 'unrecognized message! ' + message
 }

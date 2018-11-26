@@ -203,7 +203,7 @@ async function handleImage(context, imageBuffer) {
     const outBlocks = []
     for (let i = 0; i < 5; i++) {
       const targetIndex = Math.ceil((i + 1) * blocks.length / 5)
-      outBlocks.push(blocks.slice(processedIndex, targetIndex).join('\n---\n'))
+      outBlocks.push(blocks.slice(processedIndex, targetIndex).map(x => `・ ${x}`).join('\n'))
       processedIndex = targetIndex
     }
     return outBlocks

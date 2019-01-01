@@ -80,5 +80,5 @@ Here is the list of [secrets](https://webtask.io/docs/editor/secrets) used in th
 | `AIRTABLE_API_KEY` | self-explanatory |
 | `AIRTABLE_EXPENSE_BASE` | the ID of the Airtable base used for [tracking expenses](#expense-tracking) (should start with ‘app’) |
 | `AIRTABLE_EXPENSE_URI` | the web URL to the Airtable base |
-| `EXPENSE_PACEMAKER` | usage budget per day (rolls over to the next day) |
+| `EXPENSE_PACEMAKER` | two numbers in form of A/B, where A is usage budget per day (rolls over to the next day) and B is starting budget |
 | `CLOUD_VISION_SERVICE_ACCOUNT` | the contents of Google Cloud service account JSON file, base64-encoded, for use with Cloud Vision |

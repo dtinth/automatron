@@ -29,7 +29,7 @@ async function handleTextMessage(context, message) {
     await sendHomeCommand(context, 'plugs off')
     return 'ok, turning smart plugs off'
   } else if (message === 'home' || message === 'arriving' || message === 'sticker:2:503') {
-    await sendHomeCommand(context, ['plugs on', 'lights on', 'ac on'])
+    await sendHomeCommand(context, ['plugs on', 'lights normal', 'ac on'])
     return 'preparing home'
   } else if (message === 'leaving' || message === 'sticker:2:502') {
     await sendHomeCommand(context, ['plugs off', 'lights off', 'ac off'])
@@ -267,8 +267,8 @@ async function recordExpense(context, amount, category, remarks = '') {
   const $ = v => `฿${v.toFixed(2)}`
   const footer = [
     ['today', $(todayUsage)],
-    // ['pace', $(pacemaker)],
-    ['trip total', $(totalUsage)],
+    ['pace', $(pacemaker)],
+    // ['trip total', $(totalUsage)],
     ['day', `${dayNumber}`]
   ]
 

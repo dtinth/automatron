@@ -263,7 +263,8 @@ async function recordExpense(context, amount, category, remarks = '') {
   const todayUsage = total(tableData.filter(r => r.get('Date') === date))
   const totalUsage = total(tableData)
   const dayNumber = Math.round((Date.parse(date) - Date.parse(firstDate)) / 86400e3) + 1
-  const pacemaker = +context.secrets.EXPENSE_PACEMAKER * dayNumber - totalUsage
+  const [pacemakerPerDay, pacemakerBase] = context.secrets.EXPENSE_PACEMAKER.split('/')
+  const pacemaker = (+pacemakerBase) + (+pacemakerPerDay) * dayNumber - totalUsage
   const $ = v => `฿${v.toFixed(2)}`
   const footer = [
     ['today', $(todayUsage)],

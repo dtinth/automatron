@@ -60,7 +60,6 @@ async function webtaskWrapperMiddleware(req, res, next) {
       },
       reload
     }
-    console.log('meow')
   } catch (error) {
     return next(error)
   }

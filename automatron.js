@@ -480,6 +480,11 @@ app.post('/text', require('body-parser').json(), requireApiKey, endpoint(async (
   return reply
 }))
 
+app.post('/reload', require('body-parser').json(), requireApiKey, endpoint(async (context, req, services) => {
+  context.reload()
+  return { ok: true }
+}))
+
 app.post('/sms', require('body-parser').json(), requireApiKey, endpoint(async (context, req, services) => {
   const text = String(req.body.text)
   return await handleSMS(context, services.line, text)

@@ -1,5 +1,4 @@
 const express = require('express')
-const Webtask = require('webtask-tools')
 const mqtt = require('mqtt')
 const bodyParser = require('body-parser')
 const middleware = require('@line/bot-sdk').middleware
@@ -214,27 +213,35 @@ async function handleImage(context, imageBuffer) {
 
 // ==== SERVICE FUNCTIONS ====
 
+async function getMQTTClient(context) {
+  if (global.automatronMqttPromise) {
+    return global.automatronMqttPromise
+  }
+  const promise = new Promise((resolve, reject) => {
+    var client = mqtt.connect(context.secrets.MQTT_URL);
+    client.on('connect', function () {
+      resolve(client)
+    })
+    client.on('error', function (error) {
+      reject(error)
+      global.automatronMqttPromise = null
+    })
+  })
+  global.automatronMqttPromise = promise
+  return promise
+}
+
 /**
  * @param {WebtaskContext} context
  * @param {string | string[]} cmd
  */
 async function sendHomeCommand(context, cmd) {
-  const start = Date.now()
-  return new Promise((resolve, reject) => {
-    var client = mqtt.connect(context.secrets.MQTT_URL);
-    client.on('connect', function () {
-      if (Array.isArray(cmd)) {
-        cmd.forEach(c => client.publish('home', c));
-      } else {
-        client.publish('home', cmd);
-      }
-      console.log('Finish sending command', cmd, Date.now() - start)
-      client.end(false, resolve);
-    });
-    client.on('error', function (error) {
-      reject(error);
-    });
-  });
+  var client = await getMQTTClient(context)
+  if (Array.isArray(cmd)) {
+    cmd.forEach(c => client.publish('home', c));
+  } else {
+    client.publish('home', cmd);
+  }
 }
 
 /**
@@ -539,4 +546,4 @@ function readAsBuffer(stream) {
   })
 }
 
-module.exports = Webtask.fromExpress(app)
+module.exports = app

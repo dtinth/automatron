@@ -11,20 +11,25 @@
   "repository": "https://github.com/dtinth/automatron",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "deploy": "gcloud app deploy --quiet",
+    "upload": "gsutil cp automatron.js gs://$$GOOGLE_CLOUD_PROJECT.appspot.com/automatron.js"
   },
   "dependencies": {
-    "express": "4.16.4",
-    "body-parser": "1.18.3",
+    "@google-cloud/storage": "^2.4.2",
+    "@google-cloud/vision": "0.22.1",
     "@line/bot-sdk": "6.3.0",
-    "mqtt": "2.18.8",
+    "airtable": "0.5.9",
     "axios": "0.18.0",
+    "body-parser": "1.18.3",
+    "dotenv": "^7.0.0",
+    "express": "4.16.4",
     "livescript": "1.6.0",
+    "lodash": "^4.17.11",
+    "mqtt": "2.18.8",
     "prelude-ls": "1.1.2",
     "transaction-parser-th": "0.1.1",
-    "airtable": "0.5.9",
-    "@google-cloud/vision": "0.22.1"
+    "verror": "^1.10.0"
   },
-  "devDependencies": {
-  }
+  "devDependencies": {}
 }

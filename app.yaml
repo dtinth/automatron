@@ -4,4 +4,5 @@ automatic_scaling:
   target_throughput_utilization: 0.95
   max_instances: 1
   min_instances: 1
-  min_idle_instances: 1
+inbound_services:
+  - warmup

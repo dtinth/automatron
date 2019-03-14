@@ -66,6 +66,20 @@ async function webtaskWrapperMiddleware(req, res, next) {
   next()
 }
 
+app.get('/_ah/warmup', async (req, res, next) => {
+  try {
+    console.log('Warmup starting...')
+    await Promise.all([
+      getSecrets(),
+      getAutomatron()
+    ])
+    console.log('Warmup finished!')
+  } catch (error) {
+    return next(error)
+  }
+  res.send({ ok: true })
+})
+
 app.use('/automatron', webtaskWrapperMiddleware, async function(req, res, next) {
   try {
     const automatron = await getAutomatron()

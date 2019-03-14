@@ -213,24 +213,6 @@ async function handleImage(context, imageBuffer) {
 
 // ==== SERVICE FUNCTIONS ====
 
-async function getMQTTClient(context) {
-  if (global.automatronMqttPromise) {
-    return global.automatronMqttPromise
-  }
-  const promise = new Promise((resolve, reject) => {
-    var client = mqtt.connect(context.secrets.MQTT_URL);
-    client.on('connect', function () {
-      resolve(client)
-    })
-    client.on('error', function (error) {
-      reject(error)
-      global.automatronMqttPromise = null
-    })
-  })
-  global.automatronMqttPromise = promise
-  return promise
-}
-
 /**
  * @param {WebtaskContext} context
  * @param {string | string[]} cmd
@@ -328,6 +310,24 @@ async function recordExpense(context, amount, category, remarks = '') {
 }
 
 // ==== UTILITY FUNCTIONS ====
+
+async function getMQTTClient(context) {
+  if (global.automatronMqttPromise) {
+    return global.automatronMqttPromise
+  }
+  const promise = new Promise((resolve, reject) => {
+    var client = mqtt.connect(context.secrets.MQTT_URL);
+    client.on('connect', function () {
+      resolve(client)
+    })
+    client.on('error', function (error) {
+      reject(error)
+      global.automatronMqttPromise = null
+    })
+  })
+  global.automatronMqttPromise = promise
+  return promise
+}
 
 function toMessages(data) {
   if (!data) data = '...'

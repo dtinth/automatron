@@ -27,7 +27,11 @@ async function handleTextMessage(context, message) {
   } else if (message === 'power off' || message === 'plugs off') {
     await sendHomeCommand(context, 'plugs off')
     return 'ok, turning smart plugs off'
-  } else if (message === 'home' || message === 'arriving' || message === 'sticker:2:503') {
+  } else if (
+    message === 'home' ||
+    message === 'arriving' ||
+    message === 'sticker:2:503'
+  ) {
     await sendHomeCommand(context, ['plugs on', 'lights normal', 'ac on'])
     return 'preparing home'
   } else if (message === 'leaving' || message === 'sticker:2:502') {
@@ -36,7 +40,12 @@ async function handleTextMessage(context, message) {
   } else if (message === 'lights' || message === 'sticker:4:275') {
     await sendHomeCommand(context, 'lights normal')
     return 'ok, lights normal'
-  } else if (message === 'bedtime' || message === 'gn' || message === 'gngn' || message === 'sticker:11539:52114128') {
+  } else if (
+    message === 'bedtime' ||
+    message === 'gn' ||
+    message === 'gngn' ||
+    message === 'sticker:11539:52114128'
+  ) {
     await sendHomeCommand(context, 'lights bedtime')
     return 'ok, good night'
   } else if (message.match(/^lights \w+$/)) {
@@ -58,18 +67,26 @@ async function handleTextMessage(context, message) {
     const remarks = m[2] ? `${m[1]} JPY` : ''
     return await recordExpense(context, amount, category, remarks)
   } else if (message.startsWith('>')) {
-    const code = require('livescript').compile(message.substr(1), { bare: true })
+    const code = require('livescript').compile(message.substr(1), {
+      bare: true
+    })
     console.log('Code compilation result', code)
     const runner = new Function(
       ...['prelude', 'code', 'context', 'state'],
       'with (prelude) { with (state) { return [ eval(code), state ] } }'
     )
     const prevStateSnapshot = await new Promise((resolve, reject) => {
-      context.storage.get((error, data) => error ? reject(error) : resolve(data))
-    })
-      .then(data => (data || {}).jsState || '{}')
+      context.storage.get((error, data) =>
+        error ? reject(error) : resolve(data)
+      )
+    }).then(data => (data || {}).jsState || '{}')
     const prevState = JSON.parse(prevStateSnapshot)
-    const [value, nextState] = runner(require('prelude-ls'), code, context, prevState)
+    const [value, nextState] = runner(
+      require('prelude-ls'),
+      code,
+      context,
+      prevState
+    )
     let result = require('util').inspect(value)
     const extraMessages = []
     const nextStateSnapshot = JSON.stringify(nextState)
@@ -79,9 +96,8 @@ async function handleTextMessage(context, message) {
         text: 'state = ' + JSON.stringify(nextState, null, 2)
       })
       await new Promise((resolve, reject) => {
-        context.storage.set(
-          { jsState: nextStateSnapshot },
-          (error) => error ? reject(error) : resolve()
+        context.storage.set({ jsState: nextStateSnapshot }, error =>
+          error ? reject(error) : resolve()
         )
       })
     }
@@ -103,47 +119,46 @@ async function handleTextMessage(context, message) {
 async function handleSMS(context, client, text) {
   const { parseSMS } = require('transaction-parser-th')
   const result = parseSMS(text)
-  if (!result || !result.amount)return { match: false }
+  if (!result || !result.amount) return { match: false }
 
   console.log('SMS parsing result', result)
   const title = result.type
   const pay = result.type === 'pay'
   const moneyOut = ['pay', 'transfer', 'withdraw'].includes(result.type)
   const body = {
-    "type": "box",
-    "layout": "vertical",
-    "contents": [
+    type: 'box',
+    layout: 'vertical',
+    contents: [
       {
-        "type": "text",
-        "text": "฿" + result.amount,
-        "size": "xxl",
-        "weight": "bold"
+        type: 'text',
+        text: '฿' + result.amount,
+        size: 'xxl',
+        weight: 'bold'
       }
     ]
   }
   const ordering = ['provider', 'from', 'to', 'via', 'date', 'time', 'balance']
   const skip = ['type', 'amount']
-  const getOrder = key => (ordering.indexOf(key) + 1) || 999
+  const getOrder = key => ordering.indexOf(key) + 1 || 999
   for (const key of Object.keys(result)
     .filter(key => !skip.includes(key))
-    .sort((a, b) => getOrder(a) - getOrder(b))
-  ) {
+    .sort((a, b) => getOrder(a) - getOrder(b))) {
     body.contents.push({
-      "type": "box",
-      "layout": "horizontal",
-      "spacing": "md",
-      "contents": [
+      type: 'box',
+      layout: 'horizontal',
+      spacing: 'md',
+      contents: [
         {
-          "type": "text",
-          "text": key,
-          "align": "end",
-          "color": "#888888",
-          "flex": 2
+          type: 'text',
+          text: key,
+          align: 'end',
+          color: '#888888',
+          flex: 2
         },
         {
-          "type": "text",
-          "text": String(result[key]),
-          "flex": 5
+          type: 'text',
+          text: String(result[key]),
+          flex: 5
         }
       ]
     })
@@ -175,7 +190,9 @@ async function handleSMS(context, client, text) {
     }
   ]
   if (result.type === 'pay' && result.to === 'LINEPAY*BTS01') {
-    messages.push(await recordExpense(context, result.amount, 'transportation', 'BTS'))
+    messages.push(
+      await recordExpense(context, result.amount, 'transportation', 'BTS')
+    )
   }
   await client.pushMessage(context.secrets.LINE_USER_ID, messages)
   return { match: true }
@@ -183,26 +200,38 @@ async function handleSMS(context, client, text) {
 
 async function handleImage(context, imageBuffer) {
   const credentials = JSON.parse(
-    Buffer.from(context.secrets.CLOUD_VISION_SERVICE_ACCOUNT, 'base64').toString()
+    Buffer.from(
+      context.secrets.CLOUD_VISION_SERVICE_ACCOUNT,
+      'base64'
+    ).toString()
   )
   const imageAnnotator = new vision.ImageAnnotatorClient({ credentials })
   const results = await imageAnnotator.documentTextDetection(imageBuffer)
   const fullTextAnnotation = results[0].fullTextAnnotation
   const blocks = []
   for (const page of fullTextAnnotation.pages) {
-    blocks.push(...page.blocks.map(block => {
-      return block.paragraphs.map(p =>
-        p.words.map(w => w.symbols.map(s => s.text).join('')).join(' ')
-      ).join('\n\n')
-    }))
+    blocks.push(
+      ...page.blocks.map(block => {
+        return block.paragraphs
+          .map(p =>
+            p.words.map(w => w.symbols.map(s => s.text).join('')).join(' ')
+          )
+          .join('\n\n')
+      })
+    )
   }
   const blocksToResponses = blocks => {
     if (blocks.length <= 5) return blocks
     let processedIndex = 0
     const outBlocks = []
     for (let i = 0; i < 5; i++) {
-      const targetIndex = Math.ceil((i + 1) * blocks.length / 5)
-      outBlocks.push(blocks.slice(processedIndex, targetIndex).map(x => `・ ${x}`).join('\n'))
+      const targetIndex = Math.ceil(((i + 1) * blocks.length) / 5)
+      outBlocks.push(
+        blocks
+          .slice(processedIndex, targetIndex)
+          .map(x => `・ ${x}`)
+          .join('\n')
+      )
       processedIndex = targetIndex
     }
     return outBlocks
@@ -220,9 +249,9 @@ async function handleImage(context, imageBuffer) {
 async function sendHomeCommand(context, cmd) {
   var client = await getMQTTClient(context)
   if (Array.isArray(cmd)) {
-    cmd.forEach(c => client.publish('home', c));
+    cmd.forEach(c => client.publish('home', c))
   } else {
-    client.publish('home', cmd);
+    client.publish('home', cmd)
   }
 }
 
@@ -237,27 +266,30 @@ async function recordExpense(context, amount, category, remarks = '') {
   // Airtable
   const table = getExpensesTable(context)
 
-  const record = await table.create({
-    Date: date,
-    Category: category,
-    Amount: amount,
-    Remarks: remarks
-  }, { typecast: true })
+  const record = await table.create(
+    {
+      Date: date,
+      Category: category,
+      Amount: amount,
+      Remarks: remarks
+    },
+    { typecast: true }
+  )
 
   const body = {
-    "type": "box",
-    "layout": "vertical",
-    "contents": [
+    type: 'box',
+    layout: 'vertical',
+    contents: [
       {
-        "type": "text",
-        "text": "฿" + amount,
-        "size": "xxl",
-        "weight": "bold"
+        type: 'text',
+        text: '฿' + amount,
+        size: 'xxl',
+        weight: 'bold'
       },
       {
-        "type": "text",
-        "text": `${category}\nrecorded`,
-        "wrap": true
+        type: 'text',
+        text: `${category}\nrecorded`,
+        wrap: true
       }
     ],
     action: {
@@ -278,8 +310,20 @@ async function recordExpense(context, amount, category, remarks = '') {
         type: 'box',
         layout: 'vertical',
         contents: [
-          { type: 'text', text: label, color: '#8b8685', size: 'xs', align: 'end' },
-          { type: 'text', text: text, color: '#8b8685', size: 'sm', align: 'end' }
+          {
+            type: 'text',
+            text: label,
+            color: '#8b8685',
+            size: 'xs',
+            align: 'end'
+          },
+          {
+            type: 'text',
+            text: text,
+            color: '#8b8685',
+            size: 'sm',
+            align: 'end'
+          }
         ]
       })),
       action: {
@@ -300,15 +344,24 @@ function getExpensesTable(context) {
 
 async function getExpensesSummaryData(context) {
   const date = new Date().toJSON().split('T')[0]
-  const tableData = await getExpensesTable(context).select().all()
+  const tableData = await getExpensesTable(context)
+    .select()
+    .all()
   const normalRecords = tableData.filter(r => !r.get('Occasional'))
-  const total = records => records.map(r => +r.get('Amount') || 0).reduce((a, b) => a + b, 0)
-  const firstDate = normalRecords.map(r => r.get('Date')).reduce((a, b) => a < b ? a : b, date)
+  const total = records =>
+    records.map(r => +r.get('Amount') || 0).reduce((a, b) => a + b, 0)
+  const firstDate = normalRecords
+    .map(r => r.get('Date'))
+    .reduce((a, b) => (a < b ? a : b), date)
   const todayUsage = total(normalRecords.filter(r => r.get('Date') === date))
   const totalUsage = total(normalRecords)
-  const dayNumber = Math.round((Date.parse(date) - Date.parse(firstDate)) / 86400e3) + 1
-  const [pacemakerPerDay, pacemakerBase] = context.secrets.EXPENSE_PACEMAKER.split('/')
-  const pacemaker = (+pacemakerBase) + (+pacemakerPerDay) * dayNumber - totalUsage
+  const dayNumber =
+    Math.round((Date.parse(date) - Date.parse(firstDate)) / 86400e3) + 1
+  const [
+    pacemakerPerDay,
+    pacemakerBase
+  ] = context.secrets.EXPENSE_PACEMAKER.split('/')
+  const pacemaker = +pacemakerBase + +pacemakerPerDay * dayNumber - totalUsage
   const $ = v => `฿${v.toFixed(2)}`
   return [
     ['today', $(todayUsage)],
@@ -324,11 +377,11 @@ async function getMQTTClient(context) {
     return global.automatronMqttPromise
   }
   const promise = new Promise((resolve, reject) => {
-    var client = mqtt.connect(context.secrets.MQTT_URL);
-    client.on('connect', function () {
+    var client = mqtt.connect(context.secrets.MQTT_URL)
+    client.on('connect', function() {
       resolve(client)
     })
-    client.on('error', function (error) {
+    client.on('error', function(error) {
       reject(error)
       global.automatronMqttPromise = null
     })
@@ -344,7 +397,8 @@ function toMessages(data) {
 }
 
 function createErrorMessage(error) {
-  const title = (error.name || 'Error') + (error.message ? `: ${error.message}` : '')
+  const title =
+    (error.name || 'Error') + (error.message ? `: ${error.message}` : '')
   return createBubble(title, String(error.stack || error), {
     headerBackground: '#E82822',
     headerColor: '#ffffff',
@@ -360,31 +414,29 @@ function createBubble(
     headerColor = '#d7fc70',
     textSize = 'xl',
     altText = text,
-    footer,
+    footer
   } = {}
 ) {
   const data = {
     type: 'bubble',
     styles: {
-      header: { backgroundColor: headerBackground },
+      header: { backgroundColor: headerBackground }
     },
     header: {
       type: 'box',
       layout: 'vertical',
       contents: [
-        { type: 'text', text: title, color: headerColor, weight: 'bold' },
-      ],
+        { type: 'text', text: title, color: headerColor, weight: 'bold' }
+      ]
     },
     body:
       typeof text === 'string'
         ? {
             type: 'box',
             layout: 'vertical',
-            contents: [
-              { type: 'text', text: text, wrap: true, size: textSize },
-            ],
+            contents: [{ type: 'text', text: text, wrap: true, size: textSize }]
           }
-        : text,
+        : text
   }
   if (footer) {
     data.styles.footer = { backgroundColor: '#e9e8e7' }
@@ -399,21 +451,23 @@ function createBubble(
                 text: footer,
                 wrap: true,
                 size: 'sm',
-                color: '#8b8685',
-              },
-            ],
+                color: '#8b8685'
+              }
+            ]
           }
         : footer
   }
   return {
     type: 'flex',
     altText: truncate(`[${title}] ${altText}`, 400),
-    contents: data,
+    contents: data
   }
 }
 
 function truncate(text, maxLength) {
-  return text.length + 5 > maxLength ? text.substr(0, maxLength - 5) + '…' : text
+  return text.length + 5 > maxLength
+    ? text.substr(0, maxLength - 5) + '…'
+    : text
 }
 
 // ==== RUNTIME CODE ====
@@ -443,7 +497,10 @@ async function handleWebhook(context, events, client) {
       const reply = await handleTextMessage(context, message.text)
       await client.replyMessage(replyToken, toMessages(reply))
     } else if (message.type === 'sticker') {
-      const reply = await handleTextMessage(context, 'sticker:' + message.packageId + ':' + message.stickerId)
+      const reply = await handleTextMessage(
+        context,
+        'sticker:' + message.packageId + ':' + message.stickerId
+      )
       await client.replyMessage(replyToken, toMessages(reply))
     } else if (message.type === 'image') {
       const content = await client.getMessageContent(message.id)
@@ -473,53 +530,83 @@ app.post('/webhook', (req, res, next) => {
   })
 })
 
-app.post('/post', require('body-parser').json(), requireApiKey, endpoint(async (context, req, services) => {
-  const client = services.line
-  const messages = toMessages(req.body.data)
-  await client.pushMessage(context.secrets.LINE_USER_ID, messages)
-}))
+app.post(
+  '/post',
+  require('body-parser').json(),
+  requireApiKey,
+  endpoint(async (context, req, services) => {
+    const client = services.line
+    const messages = toMessages(req.body.data)
+    await client.pushMessage(context.secrets.LINE_USER_ID, messages)
+  })
+)
 
-app.post('/text', require('body-parser').json(), requireApiKey, endpoint(async (context, req, services) => {
-  const text = String(req.body.text)
-  const client = services.line
-  await client.pushMessage(context.secrets.LINE_USER_ID, toMessages('received: ' + text + ` [from ${req.body.source}]`))
-  const reply = await handleTextMessage(context, text)
-  await client.pushMessage(context.secrets.LINE_USER_ID, toMessages(reply))
-  return reply
-}))
+app.post(
+  '/text',
+  require('body-parser').json(),
+  requireApiKey,
+  endpoint(async (context, req, services) => {
+    const text = String(req.body.text)
+    const client = services.line
+    await client.pushMessage(
+      context.secrets.LINE_USER_ID,
+      toMessages('received: ' + text + ` [from ${req.body.source}]`)
+    )
+    const reply = await handleTextMessage(context, text)
+    await client.pushMessage(context.secrets.LINE_USER_ID, toMessages(reply))
+    return reply
+  })
+)
 
-app.post('/reload', require('body-parser').json(), requireApiKey, endpoint(async (context, req, services) => {
-  context.reload()
-  return { ok: true }
-}))
+app.post(
+  '/reload',
+  require('body-parser').json(),
+  requireApiKey,
+  endpoint(async (context, req, services) => {
+    context.reload()
+    return { ok: true }
+  })
+)
 
-app.post('/sms', require('body-parser').json(), requireApiKey, endpoint(async (context, req, services) => {
-  const text = String(req.body.text)
-  return await handleSMS(context, services.line, text)
-}))
+app.post(
+  '/sms',
+  require('body-parser').json(),
+  requireApiKey,
+  endpoint(async (context, req, services) => {
+    const text = String(req.body.text)
+    return await handleSMS(context, services.line, text)
+  })
+)
 
-app.get('/cron', endpoint(async (context, req, services) => {
-  const table = new Airtable({ apiKey: context.secrets.AIRTABLE_API_KEY })
-    .base(context.secrets.AIRTABLE_CRON_BASE)
-    .table('Cron jobs')
-  const pendingJobs = await table.select({ filterByFormula: 'NOT(Completed)' }).all()
-  const jobsToRun = pendingJobs.filter(j => new Date().toJSON() >= j.get('Scheduled time'))
-  try {
-    for (job of jobsToRun) {
-      let result = 'No output'
-      try {
-        const reply = await handleTextMessage(context, job.get('Name'))
-        result = require('util').inspect(reply)
-      } catch (e) {
-        result = `Error: ${e}`
+app.get(
+  '/cron',
+  endpoint(async (context, req, services) => {
+    const table = new Airtable({ apiKey: context.secrets.AIRTABLE_API_KEY })
+      .base(context.secrets.AIRTABLE_CRON_BASE)
+      .table('Cron jobs')
+    const pendingJobs = await table
+      .select({ filterByFormula: 'NOT(Completed)' })
+      .all()
+    const jobsToRun = pendingJobs.filter(
+      j => new Date().toJSON() >= j.get('Scheduled time')
+    )
+    try {
+      for (job of jobsToRun) {
+        let result = 'No output'
+        try {
+          const reply = await handleTextMessage(context, job.get('Name'))
+          result = require('util').inspect(reply)
+        } catch (e) {
+          result = `Error: ${e}`
+        }
+        await table.update(job.id, { Completed: true, Notes: result })
       }
-      await table.update(job.id, { Completed: true, Notes: result })
+      return 'All OK'
+    } catch (e) {
+      return 'Error: ' + e
     }
-    return 'All OK'
-  } catch (e) {
-    return 'Error: ' + e
-  }
-}))
+  })
+)
 
 function requireApiKey(req, res, next) {
   const context = req.webtaskContext
@@ -541,7 +628,10 @@ function endpoint(f) {
       console.error('An error has been caught in the endpoint...')
       logError(e)
       try {
-        await client.pushMessage(context.secrets.LINE_USER_ID, createErrorMessage(e))
+        await client.pushMessage(
+          context.secrets.LINE_USER_ID,
+          createErrorMessage(e)
+        )
       } catch (ee) {
         console.error('Cannot send error message to LINE!')
         logError(ee)

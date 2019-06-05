@@ -95,7 +95,7 @@ async function handleTextMessage(context, message) {
       ...extraMessages
     ]
   }
-  return 'unrecognized message! ' + message
+  return 'unrecognized message...'
 }
 
 // ==== SMS HANDLING ====
@@ -235,9 +235,7 @@ async function recordExpense(context, amount, category, remarks = '') {
   const date = new Date().toJSON().split('T')[0]
 
   // Airtable
-  const table = new Airtable({ apiKey: context.secrets.AIRTABLE_API_KEY })
-    .base(context.secrets.AIRTABLE_EXPENSE_BASE)
-    .table('Expense records')
+  const table = getExpensesTable(context)
 
   const record = await table.create({
     Date: date,
@@ -245,22 +243,6 @@ async function recordExpense(context, amount, category, remarks = '') {
     Amount: amount,
     Remarks: remarks
   }, { typecast: true })
-
-  const tableData = await table.select().all()
-  const total = records => records.map(r => +r.get('Amount') || 0).reduce((a, b) => a + b, 0)
-  const firstDate = tableData.map(r => r.get('Date')).reduce((a, b) => a < b ? a : b, date)
-  const todayUsage = total(tableData.filter(r => r.get('Date') === date))
-  const totalUsage = total(tableData)
-  const dayNumber = Math.round((Date.parse(date) - Date.parse(firstDate)) / 86400e3) + 1
-  const [pacemakerPerDay, pacemakerBase] = context.secrets.EXPENSE_PACEMAKER.split('/')
-  const pacemaker = (+pacemakerBase) + (+pacemakerPerDay) * dayNumber - totalUsage
-  const $ = v => `฿${v.toFixed(2)}`
-  const footer = [
-    ['today', $(todayUsage)],
-    ['pace', $(pacemaker)],
-    // ['trip total', $(totalUsage)],
-    ['day', `${dayNumber}`]
-  ]
 
   const body = {
     "type": "box",
@@ -285,6 +267,7 @@ async function recordExpense(context, amount, category, remarks = '') {
     }
   }
 
+  const footer = await getExpensesSummaryData(context)
   const bubble = createBubble('expense tracking', body, {
     headerColor: '#ffffbb',
     footer: {
@@ -307,6 +290,31 @@ async function recordExpense(context, amount, category, remarks = '') {
     }
   })
   return bubble
+}
+
+function getExpensesTable(context) {
+  return new Airtable({ apiKey: context.secrets.AIRTABLE_API_KEY })
+    .base(context.secrets.AIRTABLE_EXPENSE_BASE)
+    .table('Expense records')
+}
+
+async function getExpensesSummaryData(context) {
+  const date = new Date().toJSON().split('T')[0]
+  const tableData = await getExpensesTable(context).select().all()
+  const normalRecords = tableData.filter(r => !r.get('Occasional'))
+  const total = records => records.map(r => +r.get('Amount') || 0).reduce((a, b) => a + b, 0)
+  const firstDate = normalRecords.map(r => r.get('Date')).reduce((a, b) => a < b ? a : b, date)
+  const todayUsage = total(normalRecords.filter(r => r.get('Date') === date))
+  const totalUsage = total(normalRecords)
+  const dayNumber = Math.round((Date.parse(date) - Date.parse(firstDate)) / 86400e3) + 1
+  const [pacemakerPerDay, pacemakerBase] = context.secrets.EXPENSE_PACEMAKER.split('/')
+  const pacemaker = (+pacemakerBase) + (+pacemakerPerDay) * dayNumber - totalUsage
+  const $ = v => `฿${v.toFixed(2)}`
+  return [
+    ['today', $(todayUsage)],
+    ['pace', $(pacemaker)],
+    ['day', `${dayNumber}`]
+  ]
 }
 
 // ==== UTILITY FUNCTIONS ====
@@ -488,6 +496,10 @@ app.post('/reload', require('body-parser').json(), requireApiKey, endpoint(async
 app.post('/sms', require('body-parser').json(), requireApiKey, endpoint(async (context, req, services) => {
   const text = String(req.body.text)
   return await handleSMS(context, services.line, text)
+}))
+
+app.get('/cron', endpoint(async (context, req, services) => {
+  return 'meow'
 }))
 
 function requireApiKey(req, res, next) {

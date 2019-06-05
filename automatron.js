@@ -499,7 +499,26 @@ app.post('/sms', require('body-parser').json(), requireApiKey, endpoint(async (c
 }))
 
 app.get('/cron', endpoint(async (context, req, services) => {
-  return 'meow'
+  const table = new Airtable({ apiKey: context.secrets.AIRTABLE_API_KEY })
+    .base(context.secrets.AIRTABLE_CRON_BASE)
+    .table('Cron jobs')
+  const pendingJobs = await table.select({ filterByFormula: 'NOT(Completed)' }).all()
+  const jobsToRun = pendingJobs.filter(j => new Date().toJSON() >= j.get('Scheduled time'))
+  try {
+    for (job of jobsToRun) {
+      let result = 'No output'
+      try {
+        const reply = await handleTextMessage(context, job.get('Name'))
+        result = require('util').inspect(reply)
+      } catch (e) {
+        result = `Error: ${e}`
+      }
+      await table.update(job.id, { Completed: true, Notes: result })
+    }
+    return 'All OK'
+  } catch (e) {
+    return 'Error: ' + e
+  }
 }))
 
 function requireApiKey(req, res, next) {

@@ -47,7 +47,8 @@ async function handleTextMessage(context, message) {
     message === 'gngn' ||
     message === 'sticker:11539:52114128'
   ) {
-    await sendHomeCommand(context, 'lights bedtime')
+    await sendHomeCommand(context, 'lights dimmed')
+    await addCronEntry(context, Date.now() + 300e3, 'lights off')
     return 'ok, good night'
   } else if ((match = message.match(/^lights (\w+)$/))) {
     const cmd = match[1]

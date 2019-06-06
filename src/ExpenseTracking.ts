@@ -1,10 +1,10 @@
 import { FlexBox } from '@line/bot-sdk'
 import Airtable, { AirtableRecord } from 'airtable'
-import { WebtaskContext } from './types'
+import { AutomatronContext } from './types'
 import { createBubble } from './LINEMessageUtilities'
 
 export async function recordExpense(
-  context: WebtaskContext,
+  context: AutomatronContext,
   amount: string,
   category: string,
   remarks = ''
@@ -79,12 +79,12 @@ export async function recordExpense(
   })
   return bubble
 }
-function getExpensesTable(context: WebtaskContext) {
+function getExpensesTable(context: AutomatronContext) {
   return new Airtable({ apiKey: context.secrets.AIRTABLE_API_KEY })
     .base(context.secrets.AIRTABLE_EXPENSE_BASE)
     .table('Expense records')
 }
-async function getExpensesSummaryData(context: WebtaskContext) {
+async function getExpensesSummaryData(context: AutomatronContext) {
   const date = new Date().toJSON().split('T')[0]
   const tableData = await getExpensesTable(context)
     .select()

@@ -1,8 +1,8 @@
 import Airtable from 'airtable'
-import { WebtaskContext } from './types'
+import { AutomatronContext } from './types'
 
 export async function addCronEntry(
-  context: WebtaskContext,
+  context: AutomatronContext,
   time: number,
   text: string
 ) {
@@ -20,7 +20,7 @@ export async function addCronEntry(
   }
 }
 
-export function getCronTable(context: WebtaskContext) {
+export function getCronTable(context: AutomatronContext) {
   return new Airtable({ apiKey: context.secrets.AIRTABLE_API_KEY })
     .base(context.secrets.AIRTABLE_CRON_BASE)
     .table('Cron jobs')

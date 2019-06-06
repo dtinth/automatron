@@ -1,10 +1,10 @@
 import { Client, FlexBox, Message, QuickReplyItem } from '@line/bot-sdk'
-import { WebtaskContext } from './types'
+import { AutomatronContext } from './types'
 import { recordExpense } from './ExpenseTracking'
 import { createBubble } from './LINEMessageUtilities'
 
 export async function handleSMS(
-  context: WebtaskContext,
+  context: AutomatronContext,
   client: Client,
   text: string
 ) {

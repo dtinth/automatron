@@ -6,7 +6,7 @@ import express, {
 } from 'express'
 import { Client, middleware, WebhookEvent, MessageEvent } from '@line/bot-sdk'
 import { Stream } from 'stream'
-import { WebtaskContext } from './types'
+import { AutomatronContext } from './types'
 import { handleSMS } from './SMSHandler'
 import { toMessages, createErrorMessage } from './LINEMessageUtilities'
 import { getCronTable } from './Cron'
@@ -15,7 +15,7 @@ import { handleTextMessage, handleImage } from './MessageHandler'
 const app = express()
 
 async function handleWebhook(
-  context: WebtaskContext,
+  context: AutomatronContext,
   events: WebhookEvent[],
   client: Client
 ) {
@@ -156,7 +156,7 @@ function requireApiKey(req: Request, res: Response, next: NextFunction) {
 }
 function endpoint(
   f: (
-    context: WebtaskContext,
+    context: AutomatronContext,
     req: Request,
     services: {
       line: Client

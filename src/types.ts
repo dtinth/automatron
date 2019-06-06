@@ -1,6 +1,6 @@
 import { BotSecrets } from './BotSecrets'
 
-export interface WebtaskContext {
+export interface AutomatronContext {
   storage: {
     get(callback: (error?: Error, data?: any) => void): void
     set(state: any, callback: (error?: Error) => void): void
@@ -12,7 +12,7 @@ export interface WebtaskContext {
 declare global {
   module Express {
     interface Request {
-      webtaskContext: WebtaskContext
+      webtaskContext: AutomatronContext
     }
   }
 }

@@ -1,11 +1,11 @@
 import vision from '@google-cloud/vision'
-import { WebtaskContext } from './types'
+import { AutomatronContext } from './types'
 import { recordExpense } from './ExpenseTracking'
 import { sendHomeCommand } from './HomeAutomation'
 import { addCronEntry } from './Cron'
 
 export async function handleTextMessage(
-  context: WebtaskContext,
+  context: AutomatronContext,
   message: string
 ) {
   let match: RegExpMatchArray | null
@@ -116,7 +116,7 @@ export async function handleTextMessage(
   return 'unrecognized message...'
 }
 export async function handleImage(
-  context: WebtaskContext,
+  context: AutomatronContext,
   imageBuffer: Buffer
 ) {
   const credentials = JSON.parse(

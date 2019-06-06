@@ -1,8 +1,8 @@
 import mqtt from 'mqtt'
-import { WebtaskContext } from './types'
+import { AutomatronContext } from './types'
 
 export async function sendHomeCommand(
-  context: WebtaskContext,
+  context: AutomatronContext,
   cmd: string | string[]
 ) {
   var client = await getMQTTClient(context)
@@ -13,7 +13,7 @@ export async function sendHomeCommand(
   }
 }
 
-async function getMQTTClient(context: WebtaskContext) {
+async function getMQTTClient(context: AutomatronContext) {
   const unsafeGlobal = global as any
   if (unsafeGlobal.automatronMqttPromise) {
     return unsafeGlobal.automatronMqttPromise

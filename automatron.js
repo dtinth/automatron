@@ -15,6 +15,7 @@ const vision = require('@google-cloud/vision')
  * @param {string} message
  */
 async function handleTextMessage(context, message) {
+  let match
   if (message === 'ac on' || message === 'sticker:2:27') {
     await sendHomeCommand(context, 'ac on')
     return 'ok, turning air-con on'
@@ -48,12 +49,17 @@ async function handleTextMessage(context, message) {
   ) {
     await sendHomeCommand(context, 'lights bedtime')
     return 'ok, good night'
-  } else if (message.match(/^lights \w+$/)) {
-    const cmd = message.split(' ')[1]
+  } else if ((match = message.match(/^lights (\w+)$/))) {
+    const cmd = match[1]
     await sendHomeCommand(context, 'lights ' + cmd)
     return 'ok, lights ' + cmd
-  } else if (message.match(/^[\d.]+j?[tfghmol]$/i)) {
-    const m = message.match(/^([\d.]+)(j?)([tfghmol])$/i)
+  } else if ((match = message.match(/^in ([\d\.]+)([mh]),?\s+([^]+)$/))) {
+    const targetTime =
+      Date.now() + 1 * match[1] + (match[2] === 'm' ? 60 : 3600) * 1e3
+    const result = await addCronEntry(context, targetTime, match[3])
+    return `will run "${match[3]}" at ${result.localTime}`
+  } else if ((match = message.match(/^[\d.]+j?[tfghmol]$/i))) {
+    const m = match
     const amount = (+m[1] * (m[2] ? 0.302909 : 1)).toFixed(2)
     const category = {
       t: 'transportation',
@@ -470,6 +476,27 @@ function truncate(text, maxLength) {
     : text
 }
 
+async function addCronEntry(context, time, text) {
+  const targetTime = new Date(time)
+  targetTime.setUTCSeconds(0)
+  targetTime.setUTCMilliseconds(0)
+  await getCronTable(context).create({
+    Name: text,
+    'Scheduled time': targetTime.toJSON()
+  })
+  return {
+    localTime: new Date(targetTime.getTime() + 7 * 3600e3)
+      .toJSON()
+      .replace(/\.000Z/, '')
+  }
+}
+
+function getCronTable(context) {
+  return new Airtable({ apiKey: context.secrets.AIRTABLE_API_KEY })
+    .base(context.secrets.AIRTABLE_CRON_BASE)
+    .table('Cron jobs')
+}
+
 // ==== RUNTIME CODE ====
 
 /**
@@ -581,9 +608,7 @@ app.post(
 app.get(
   '/cron',
   endpoint(async (context, req, services) => {
-    const table = new Airtable({ apiKey: context.secrets.AIRTABLE_API_KEY })
-      .base(context.secrets.AIRTABLE_CRON_BASE)
-      .table('Cron jobs')
+    const table = getCronTable(context)
     const pendingJobs = await table
       .select({ filterByFormula: 'NOT(Completed)' })
       .all()

@@ -1,0 +1,43 @@
+{
+  "name": "@dtinth/automatron",
+  "private": true,
+  "description": "My LINE bot!",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "author": "Google Inc.",
+  "engines": {
+    "node": ">=10"
+  },
+  "repository": "https://github.com/dtinth/automatron",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "deploy": "gcloud app deploy --quiet",
+    "dev": "node dev.js"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^2.4.2",
+    "@google-cloud/vision": "0.22.1",
+    "@line/bot-sdk": "6.3.0",
+    "airtable": "0.5.9",
+    "axios": "0.18.0",
+    "body-parser": "1.18.3",
+    "dotenv": "^7.0.0",
+    "express": "4.16.4",
+    "livescript": "1.6.0",
+    "lodash": "^4.17.11",
+    "mqtt": "2.18.8",
+    "prelude-ls": "1.1.2",
+    "transaction-parser-th": "0.1.1",
+    "verror": "^1.10.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.0",
+    "execa": "^1.0.0",
+    "nsfw": "^1.2.2",
+    "ora": "^3.2.0",
+    "parcel-bundler": "1.12.3",
+    "typescript": "3.5.1",
+    "yargs": "^13.2.2"
+  }
+}

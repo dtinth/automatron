@@ -8,7 +8,7 @@ I recommend every developer to try creating their own personal assistant chat bo
 It’s a great way to practice coding and improve problem solving skills.
 And it helps make life more convenient!
 
-It is written in JavaScript and runs on [webtask.io](https://webtask.io/) platform.
+It is written in TypeScript and runs [Google App Engine Node.js Standard Environment](https://cloud.google.com/appengine/docs/standard/nodejs/).
 
 ## features
 
@@ -68,17 +68,4 @@ automatron can also convert image to text using [Google Cloud Vision API](https:
 
 ## secrets
 
-Here is the list of [secrets](https://webtask.io/docs/editor/secrets) used in this webtask:
-
-| name | explanation |
-| ---- | ----------- |
-| `API_KEY` | the secret key that must be sent with the request to use the [API](#cli-api) |
-| `LINE_CHANNEL_SECRET` | self-explanatory |
-| `LINE_CHANNEL_ACCESS_TOKEN` | self-explanatory |
-| `LINE_USER_ID` | my user ID, so that the bot receives commands from me only |
-| `MQTT_URL` | the URL to [CloudMQTT](https://www.cloudmqtt.com/) instance used for [home automation](#home-automation) |
-| `AIRTABLE_API_KEY` | self-explanatory |
-| `AIRTABLE_EXPENSE_BASE` | the ID of the Airtable base used for [tracking expenses](#expense-tracking) (should start with ‘app’) |
-| `AIRTABLE_EXPENSE_URI` | the web URL to the Airtable base |
-| `EXPENSE_PACEMAKER` | two numbers in form of A/B, where A is usage budget per day (rolls over to the next day) and B is starting budget |
-| `CLOUD_VISION_SERVICE_ACCOUNT` | the contents of Google Cloud service account JSON file, base64-encoded, for use with Cloud Vision |
+The secret data required to run the automation are defined in [BotSecrets.ts](./src/BotSecrets.ts).

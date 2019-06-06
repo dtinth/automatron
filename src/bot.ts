@@ -1,21 +1,60 @@
-const express = require('express')
-const mqtt = require('mqtt')
-const bodyParser = require('body-parser')
-const middleware = require('@line/bot-sdk').middleware
-const Client = require('@line/bot-sdk').Client
+import express, {
+  RequestHandler,
+  Request,
+  Response,
+  NextFunction
+} from 'express'
+import mqtt from 'mqtt'
+import {
+  Client,
+  middleware,
+  FlexBox,
+  FlexText,
+  FlexBubble,
+  Message,
+  FlexMessage,
+  QuickReplyItem,
+  WebhookEvent,
+  MessageEvent
+} from '@line/bot-sdk'
+import Airtable, { AirtableRecord } from 'airtable'
+import vision from '@google-cloud/vision'
+import { Stream } from 'stream'
+
 const app = express()
-const axios = require('axios')
-const Airtable = require('airtable')
-const vision = require('@google-cloud/vision')
 
 // ==== MAIN BOT LOGIC ====
+interface WebtaskContext {
+  storage: {
+    get(callback: (error?: Error, data?: any) => void): void
+    set(state: any, callback: (error?: Error) => void): void
+  }
+  secrets: BotSecrets
+  reload(): void
+}
+interface BotSecrets {
+  LINE_CHANNEL_SECRET: string
+  LINE_CHANNEL_ACCESS_TOKEN: string
+  API_KEY: string
+  AIRTABLE_CRON_BASE: string
+  EXPENSE_PACEMAKER: string
+  MQTT_URL: string
+  AIRTABLE_EXPENSE_BASE: string
+  LINE_USER_ID: string
+  CLOUD_VISION_SERVICE_ACCOUNT: string
+  AIRTABLE_EXPENSE_URI: string
+  AIRTABLE_API_KEY: string
+}
+declare global {
+  module Express {
+    interface Request {
+      webtaskContext: WebtaskContext
+    }
+  }
+}
 
-/**
- * @param {WebtaskContext} context
- * @param {string} message
- */
-async function handleTextMessage(context, message) {
-  let match
+async function handleTextMessage(context: WebtaskContext, message: string) {
+  let match: RegExpMatchArray | null
   if (message === 'ac on' || message === 'sticker:2:27') {
     await sendHomeCommand(context, 'ac on')
     return 'ok, turning air-con on'
@@ -56,13 +95,13 @@ async function handleTextMessage(context, message) {
     return 'ok, lights ' + cmd
   } else if ((match = message.match(/^in ([\d\.]+)([mh]),?\s+([^]+)$/))) {
     const targetTime =
-      Date.now() + 1 * match[1] + (match[2] === 'm' ? 60 : 3600) * 1e3
+      Date.now() + +match[1] + (match[2] === 'm' ? 60 : 3600) * 1e3
     const result = await addCronEntry(context, targetTime, match[3])
     return `will run "${match[3]}" at ${result.localTime}`
   } else if ((match = message.match(/^[\d.]+j?[tfghmol]$/i))) {
     const m = match
     const amount = (+m[1] * (m[2] ? 0.302909 : 1)).toFixed(2)
-    const category = {
+    const category = ({
       t: 'transportation',
       f: 'food',
       g: 'game',
@@ -70,7 +109,7 @@ async function handleTextMessage(context, message) {
       m: 'miscellaneous',
       o: 'occasion',
       l: 'lodging'
-    }[m[3].toLowerCase()]
+    } as { [k: string]: string })[m[3].toLowerCase()]
     const remarks = m[2] ? `${m[1]} JPY` : ''
     return await recordExpense(context, amount, category, remarks)
   } else if (message.startsWith('>')) {
@@ -82,7 +121,7 @@ async function handleTextMessage(context, message) {
       ...['prelude', 'code', 'context', 'state'],
       'with (prelude) { with (state) { return [ eval(code), state ] } }'
     )
-    const prevStateSnapshot = await new Promise((resolve, reject) => {
+    const prevStateSnapshot = await new Promise<any>((resolve, reject) => {
       context.storage.get((error, data) =>
         error ? reject(error) : resolve(data)
       )
@@ -123,7 +162,11 @@ async function handleTextMessage(context, message) {
 
 // ==== SMS HANDLING ====
 
-async function handleSMS(context, client, text) {
+async function handleSMS(
+  context: WebtaskContext,
+  client: Client,
+  text: string
+) {
   const { parseSMS } = require('transaction-parser-th')
   const result = parseSMS(text)
   if (!result || !result.amount) return { match: false }
@@ -132,7 +175,7 @@ async function handleSMS(context, client, text) {
   const title = result.type
   const pay = result.type === 'pay'
   const moneyOut = ['pay', 'transfer', 'withdraw'].includes(result.type)
-  const body = {
+  const body: FlexBox = {
     type: 'box',
     layout: 'vertical',
     contents: [
@@ -146,7 +189,7 @@ async function handleSMS(context, client, text) {
   }
   const ordering = ['provider', 'from', 'to', 'via', 'date', 'time', 'balance']
   const skip = ['type', 'amount']
-  const getOrder = key => ordering.indexOf(key) + 1 || 999
+  const getOrder = (key: string) => ordering.indexOf(key) + 1 || 999
   for (const key of Object.keys(result)
     .filter(key => !skip.includes(key))
     .sort((a, b) => getOrder(a) - getOrder(b))) {
@@ -170,7 +213,7 @@ async function handleSMS(context, client, text) {
       ]
     })
   }
-  const quickReply = (suffix, label) => ({
+  const quickReply = (suffix: string, label: string): QuickReplyItem => ({
     type: 'action',
     action: {
       type: 'message',
@@ -178,7 +221,7 @@ async function handleSMS(context, client, text) {
       text: result.amount + suffix
     }
   })
-  const messages = [
+  const messages: Message[] = [
     {
       ...createBubble(title, body, {
         headerBackground: pay ? '#91918F' : moneyOut ? '#DA9E00' : '#9471FF',
@@ -205,7 +248,7 @@ async function handleSMS(context, client, text) {
   return { match: true }
 }
 
-async function handleImage(context, imageBuffer) {
+async function handleImage(context: WebtaskContext, imageBuffer: Buffer) {
   const credentials = JSON.parse(
     Buffer.from(
       context.secrets.CLOUD_VISION_SERVICE_ACCOUNT,
@@ -215,7 +258,7 @@ async function handleImage(context, imageBuffer) {
   const imageAnnotator = new vision.ImageAnnotatorClient({ credentials })
   const results = await imageAnnotator.documentTextDetection(imageBuffer)
   const fullTextAnnotation = results[0].fullTextAnnotation
-  const blocks = []
+  const blocks: string[] = []
   for (const page of fullTextAnnotation.pages) {
     blocks.push(
       ...page.blocks.map(block => {
@@ -227,7 +270,7 @@ async function handleImage(context, imageBuffer) {
       })
     )
   }
-  const blocksToResponses = blocks => {
+  const blocksToResponses = (blocks: string[]) => {
     if (blocks.length <= 5) return blocks
     let processedIndex = 0
     const outBlocks = []
@@ -249,11 +292,10 @@ async function handleImage(context, imageBuffer) {
 
 // ==== SERVICE FUNCTIONS ====
 
-/**
- * @param {WebtaskContext} context
- * @param {string | string[]} cmd
- */
-async function sendHomeCommand(context, cmd) {
+async function sendHomeCommand(
+  context: WebtaskContext,
+  cmd: string | string[]
+) {
   var client = await getMQTTClient(context)
   if (Array.isArray(cmd)) {
     cmd.forEach(c => client.publish('home', c))
@@ -262,12 +304,12 @@ async function sendHomeCommand(context, cmd) {
   }
 }
 
-/**
- * @param {WebtaskContext} context
- * @param {string} category
- * @param {string} amount
- */
-async function recordExpense(context, amount, category, remarks = '') {
+async function recordExpense(
+  context: WebtaskContext,
+  amount: string,
+  category: string,
+  remarks = ''
+) {
   const date = new Date().toJSON().split('T')[0]
 
   // Airtable
@@ -283,7 +325,7 @@ async function recordExpense(context, amount, category, remarks = '') {
     { typecast: true }
   )
 
-  const body = {
+  const body: FlexBox = {
     type: 'box',
     layout: 'vertical',
     contents: [
@@ -343,19 +385,19 @@ async function recordExpense(context, amount, category, remarks = '') {
   return bubble
 }
 
-function getExpensesTable(context) {
+function getExpensesTable(context: WebtaskContext) {
   return new Airtable({ apiKey: context.secrets.AIRTABLE_API_KEY })
     .base(context.secrets.AIRTABLE_EXPENSE_BASE)
     .table('Expense records')
 }
 
-async function getExpensesSummaryData(context) {
+async function getExpensesSummaryData(context: WebtaskContext) {
   const date = new Date().toJSON().split('T')[0]
   const tableData = await getExpensesTable(context)
     .select()
     .all()
   const normalRecords = tableData.filter(r => !r.get('Occasional'))
-  const total = records =>
+  const total = (records: AirtableRecord[]) =>
     records.map(r => +r.get('Amount') || 0).reduce((a, b) => a + b, 0)
   const firstDate = normalRecords
     .map(r => r.get('Date'))
@@ -369,7 +411,7 @@ async function getExpensesSummaryData(context) {
     pacemakerBase
   ] = context.secrets.EXPENSE_PACEMAKER.split('/')
   const pacemaker = +pacemakerBase + +pacemakerPerDay * dayNumber - totalUsage
-  const $ = v => `฿${v.toFixed(2)}`
+  const $ = (v: number) => `฿${v.toFixed(2)}`
   return [
     ['today', $(todayUsage)],
     ['pace', $(pacemaker)],
@@ -379,9 +421,10 @@ async function getExpensesSummaryData(context) {
 
 // ==== UTILITY FUNCTIONS ====
 
-async function getMQTTClient(context) {
-  if (global.automatronMqttPromise) {
-    return global.automatronMqttPromise
+async function getMQTTClient(context: WebtaskContext) {
+  const unsafeGlobal = global as any
+  if (unsafeGlobal.automatronMqttPromise) {
+    return unsafeGlobal.automatronMqttPromise
   }
   const promise = new Promise((resolve, reject) => {
     var client = mqtt.connect(context.secrets.MQTT_URL)
@@ -390,20 +433,20 @@ async function getMQTTClient(context) {
     })
     client.on('error', function(error) {
       reject(error)
-      global.automatronMqttPromise = null
+      unsafeGlobal.automatronMqttPromise = null
     })
   })
-  global.automatronMqttPromise = promise
+  unsafeGlobal.automatronMqttPromise = promise
   return promise
 }
 
-function toMessages(data) {
+function toMessages(data: any): Message[] {
   if (!data) data = '...'
   if (typeof data === 'string') data = [{ type: 'text', text: data }]
   return data
 }
 
-function createErrorMessage(error) {
+function createErrorMessage(error: Error) {
   const title =
     (error.name || 'Error') + (error.message ? `: ${error.message}` : '')
   return createBubble(title, String(error.stack || error), {
@@ -414,17 +457,23 @@ function createErrorMessage(error) {
 }
 
 function createBubble(
-  title,
-  text,
+  title: string,
+  text: string | FlexBox,
   {
     headerBackground = '#353433',
     headerColor = '#d7fc70',
     textSize = 'xl',
-    altText = text,
+    altText = String(text),
     footer
+  }: {
+    headerBackground?: string
+    headerColor?: string
+    textSize?: FlexText['size']
+    altText?: string
+    footer?: string | FlexBox
   } = {}
-) {
-  const data = {
+): FlexMessage {
+  const data: FlexBubble = {
     type: 'bubble',
     styles: {
       header: { backgroundColor: headerBackground }
@@ -446,7 +495,7 @@ function createBubble(
         : text
   }
   if (footer) {
-    data.styles.footer = { backgroundColor: '#e9e8e7' }
+    data.styles!.footer = { backgroundColor: '#e9e8e7' }
     data.footer =
       typeof footer === 'string'
         ? {
@@ -471,13 +520,17 @@ function createBubble(
   }
 }
 
-function truncate(text, maxLength) {
+function truncate(text: string, maxLength: number) {
   return text.length + 5 > maxLength
     ? text.substr(0, maxLength - 5) + '…'
     : text
 }
 
-async function addCronEntry(context, time, text) {
+async function addCronEntry(
+  context: WebtaskContext,
+  time: number,
+  text: string
+) {
   const targetTime = new Date(time)
   targetTime.setUTCSeconds(0)
   targetTime.setUTCMilliseconds(0)
@@ -492,7 +545,7 @@ async function addCronEntry(context, time, text) {
   }
 }
 
-function getCronTable(context) {
+function getCronTable(context: WebtaskContext) {
   return new Airtable({ apiKey: context.secrets.AIRTABLE_API_KEY })
     .base(context.secrets.AIRTABLE_CRON_BASE)
     .table('Cron jobs')
@@ -500,12 +553,11 @@ function getCronTable(context) {
 
 // ==== RUNTIME CODE ====
 
-/**
- * @param {WebtaskContext} context
- * @param {import('@line/bot-sdk').WebhookEvent[]} events
- * @param {import('@line/bot-sdk').Client} client
- */
-async function handleWebhook(context, events, client) {
+async function handleWebhook(
+  context: WebtaskContext,
+  events: WebhookEvent[],
+  client: Client
+) {
   async function main() {
     for (const event of events) {
       if (event.type === 'message') {
@@ -514,7 +566,7 @@ async function handleWebhook(context, events, client) {
     }
   }
 
-  async function handleMessageEvent(event) {
+  async function handleMessageEvent(event: MessageEvent) {
     const { replyToken, message } = event
     console.log(event)
     if (event.source.userId !== context.secrets.LINE_USER_ID) {
@@ -533,7 +585,7 @@ async function handleWebhook(context, events, client) {
     } else if (message.type === 'image') {
       const content = await client.getMessageContent(message.id)
       const buffer = await readAsBuffer(content)
-      const reply = await handleImage(context, buffer)
+      const reply = await handleImage(context, buffer as Buffer)
       await client.replyMessage(replyToken, toMessages(reply))
     } else {
       await client.replyMessage(replyToken, [
@@ -617,7 +669,7 @@ app.get(
       j => new Date().toJSON() >= j.get('Scheduled time')
     )
     try {
-      for (job of jobsToRun) {
+      for (const job of jobsToRun) {
         let result = 'No output'
         try {
           const reply = await handleTextMessage(context, job.get('Name'))
@@ -625,7 +677,7 @@ app.get(
         } catch (e) {
           result = `Error: ${e}`
         }
-        await table.update(job.id, { Completed: true, Notes: result })
+        await table.update(job.getId(), { Completed: true, Notes: result })
       }
       return 'All OK'
     } catch (e) {
@@ -634,15 +686,22 @@ app.get(
   })
 )
 
-function requireApiKey(req, res, next) {
+function requireApiKey(req: Request, res: Response, next: NextFunction) {
   const context = req.webtaskContext
   if (req.body.key !== context.secrets.API_KEY) {
     return res.status(401).json({ error: 'Invalid API key' })
   }
   next()
 }
-
-function endpoint(f) {
+function endpoint(
+  f: (
+    context: WebtaskContext,
+    req: Request,
+    services: {
+      line: Client
+    }
+  ) => Promise<any>
+): RequestHandler {
   return async (req, res, next) => {
     const context = req.webtaskContext
     const lineConfig = getLineConfig(req)
@@ -667,7 +726,7 @@ function endpoint(f) {
   }
 }
 
-function logError(e) {
+function logError(e: any) {
   var response = e.response || (e.originalError && e.originalError.response)
   var data = response && response.data
   if (data) {
@@ -675,7 +734,7 @@ function logError(e) {
   }
 }
 
-function getLineConfig(req) {
+function getLineConfig(req: Request) {
   const ctx = req.webtaskContext
   return {
     channelAccessToken: ctx.secrets.LINE_CHANNEL_ACCESS_TOKEN,
@@ -683,12 +742,12 @@ function getLineConfig(req) {
   }
 }
 
-function readAsBuffer(stream) {
+function readAsBuffer(stream: Stream) {
   return new Promise((resolve, reject) => {
     stream.on('error', e => {
       reject(e)
     })
-    const bufs = []
+    const bufs: Buffer[] = []
     stream.on('end', () => {
       resolve(Buffer.concat(bufs))
     })

@@ -1,2 +1,5 @@
 .env
+.cache
 node_modules
+/automatron.js
+/automatron.js.map

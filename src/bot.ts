@@ -154,6 +154,7 @@ function requireApiKey(req: Request, res: Response, next: NextFunction) {
   }
   next()
 }
+
 function endpoint(
   f: (
     context: AutomatronContext,

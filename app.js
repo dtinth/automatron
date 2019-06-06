@@ -44,7 +44,13 @@ const getAutomatron = cached('automatron', async () => {
   const m = { exports: {} }
   const code = contents.toString()
   new Function('require', 'exports', 'module', code)(require, m.exports, m)
-  console.log('Code loaded:', contents, 'bytes')
+  console.log('Code loaded:', contents.length, 'bytes')
+  if (typeof m.exports !== 'function') {
+    throw new Error(
+      'Expected automatron.js to export function, found ' +
+        require('util').inspect(m.exports)
+    )
+  }
   return m.exports
 })
 

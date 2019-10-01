@@ -3,6 +3,7 @@ import { AutomatronContext } from './types'
 import { recordExpense } from './ExpenseTracking'
 import { sendHomeCommand } from './HomeAutomation'
 import { addCronEntry } from './Cron'
+import { decodeRomanNumerals } from './RomanNumerals'
 
 export async function handleTextMessage(
   context: AutomatronContext,
@@ -52,9 +53,13 @@ export async function handleTextMessage(
       Date.now() + +match[1] + (match[2] === 'm' ? 60 : 3600) * 1e3
     const result = await addCronEntry(context, targetTime, match[3])
     return `will run "${match[3]}" at ${result.localTime}`
-  } else if ((match = message.match(/^([\d.]+)(j?)([tfghmol])$/i))) {
+  } else if ((match = message.match(/^([\d.]+|[ivxlcdm]+)(j?)([tfghmol])$/i))) {
     const m = match
-    const amount = (+m[1] * (m[2] ? 0.302909 : 1)).toFixed(2)
+    const enteredAmount = m[1].match(/[ivxlcdm]/)
+      ? decodeRomanNumerals(m[1])
+      : +m[1]
+    const conversionRate = m[2] ? 0.302909 : 1
+    const amount = (enteredAmount * conversionRate).toFixed(2)
     const category = ({
       t: 'transportation',
       f: 'food',
@@ -68,6 +73,8 @@ export async function handleTextMessage(
     })[m[3].toLowerCase()]
     const remarks = m[2] ? `${m[1]} JPY` : ''
     return await recordExpense(context, amount, category, remarks)
+  } else if ((match = message.match(/^([ivxlcdm]+)$/i))) {
+    return `${match[1]} = ${decodeRomanNumerals(match[1])}`
   } else if (message.startsWith(';')) {
     const code = require('livescript').compile(message.substr(1), {
       bare: true

@@ -52,7 +52,7 @@ export async function handleTextMessage(
       Date.now() + +match[1] + (match[2] === 'm' ? 60 : 3600) * 1e3
     const result = await addCronEntry(context, targetTime, match[3])
     return `will run "${match[3]}" at ${result.localTime}`
-  } else if ((match = message.match(/^[\d.]+j?[tfghmol]$/i))) {
+  } else if ((match = message.match(/^([\d.]+)(j?)([tfghmol])$/i))) {
     const m = match
     const amount = (+m[1] * (m[2] ? 0.302909 : 1)).toFixed(2)
     const category = ({
@@ -68,7 +68,7 @@ export async function handleTextMessage(
     })[m[3].toLowerCase()]
     const remarks = m[2] ? `${m[1]} JPY` : ''
     return await recordExpense(context, amount, category, remarks)
-  } else if (message.startsWith('>')) {
+  } else if (message.startsWith(';')) {
     const code = require('livescript').compile(message.substr(1), {
       bare: true
     })

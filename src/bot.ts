@@ -158,9 +158,7 @@ function endpoint(
   f: (
     context: AutomatronContext,
     req: Request,
-    services: {
-      line: Client
-    }
+    services: { line: Client }
   ) => Promise<any>
 ): RequestHandler {
   return async (req, res, next) => {

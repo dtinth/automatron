@@ -50,7 +50,7 @@ export async function handleTextMessage(
     return 'ok, lights ' + cmd
   } else if ((match = message.match(/^in ([\d\.]+)([mh]),?\s+([^]+)$/))) {
     const targetTime =
-      Date.now() + +match[1] + (match[2] === 'm' ? 60 : 3600) * 1e3
+      Date.now() + +match[1] * (match[2] === 'm' ? 60 : 3600) * 1e3
     const result = await addCronEntry(context, targetTime, match[3])
     return `will run "${match[3]}" at ${result.localTime}`
   } else if ((match = message.match(/^([\d.]+|[ivxlcdm]+)(j?)([tfghmol])$/i))) {

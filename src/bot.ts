@@ -14,6 +14,25 @@ import { handleTextMessage, handleImage } from './MessageHandler'
 
 const app = express()
 
+// Shim for running automatron on evalaas
+let _storedData: any = {}
+app.use((req, res, next) => {
+  if (req.env) {
+    req.webtaskContext = {
+      secrets: req.env,
+      storage: {
+        get: cb => cb(void 0, _storedData),
+        set: (value, cb) => {
+          _storedData = JSON.parse(JSON.stringify(value))
+          cb()
+        }
+      },
+      reload: () => {}
+    }
+  }
+  next()
+})
+
 async function handleWebhook(
   context: AutomatronContext,
   events: WebhookEvent[],
@@ -203,14 +222,14 @@ function getLineConfig(req: Request) {
 
 function readAsBuffer(stream: Stream) {
   return new Promise((resolve, reject) => {
-    stream.on('error', e => {
+    stream.on('error', (e: Error) => {
       reject(e)
     })
     const bufs: Buffer[] = []
     stream.on('end', () => {
       resolve(Buffer.concat(bufs))
     })
-    stream.on('data', buf => {
+    stream.on('data', (buf: Buffer) => {
       bufs.push(buf)
     })
   })

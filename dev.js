@@ -1,21 +1,16 @@
 require('dotenv').config()
 
-if (!process.env.API_KEY)
-  throw new Error('Missing API_KEY environment variable.')
 if (!process.env.GOOGLE_CLOUD_PROJECT)
   throw new Error('Missing GOOGLE_CLOUD_PROJECT environment variable.')
 
 const axios = require('axios')
 const ora = require('ora')()
-const nsfw = require('nsfw')
-const bucketName = `${process.env.GOOGLE_CLOUD_PROJECT}.appspot.com`
-const endpoint = `https://${
-  process.env.GOOGLE_CLOUD_PROJECT
-}.appspot.com/automatron`
+const bucketName = `${process.env.GOOGLE_CLOUD_PROJECT}-evalaas`
 const { Storage } = require('@google-cloud/storage')
 const gcs = new Storage()
 let pushing = false
 let pending = false
+let latestResult
 
 require('yargs')
   .command(
@@ -24,26 +19,31 @@ require('yargs')
     {},
     async args => {
       ora.info('Running bundler.')
-      const Bundler = require('parcel-bundler')
-      const entryFiles = require('path').join(__dirname, 'src/bot.ts')
-      const bundler = new Bundler(entryFiles, {
-        outDir: '.',
-        outFile: 'automatron.js',
-        watch: true,
-        target: 'node',
-        global: 'automatron'
+      const ncc = require('@zeit/ncc')('./src/bot.ts', {
+        externals: ['@google-cloud/vision'],
+        sourceMap: true,
+        sourceMapRegister: false,
+        watch: true
       })
-      bundler.bundle()
-
-      ora.info('Watching for file changes.')
-      const watcher = await nsfw(__dirname, events => {
-        if (events.some(e => e.file === 'automatron.js')) {
-          ora.info('Code change detected!')
-          push()
+      ncc.handler(result => {
+        if (result.err) {
+          console.error(result.err)
+          return
         }
+        const codeBuffer = Buffer.from(result.code)
+        const gzippedBuffer = require('zlib').gzipSync(codeBuffer)
+        console.log(
+          'Compiled / Code %skb (%skb gzipped)',
+          (codeBuffer.length / 1024).toFixed(1),
+          (gzippedBuffer.length / 1024).toFixed(1)
+        )
+        require('fs').writeFileSync('automatron.js.gz', gzippedBuffer)
+        push()
       })
-      watcher.start()
-      await push()
+      ncc.rebuild(() => {
+        console.log('Rebuilding...')
+      })
+      ora.info('Watching for file changes.')
     }
   )
   .strict()
@@ -60,9 +60,7 @@ async function push() {
   try {
     await gcs
       .bucket(bucketName)
-      .upload('automatron.js', { destination: 'automatron.js' })
-    ora.text = 'Reloading endpoint...'
-    await axios.post(`${endpoint}/reload`, { key: process.env.API_KEY })
+      .upload('automatron.js.gz', { destination: 'evalaas/automatron.js.gz' })
     ora.succeed('Done! Code updated at ' + new Date().toString())
   } catch (error) {
     ora.fail('Failed: ' + error)

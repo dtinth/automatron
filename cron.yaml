@@ -1,4 +1,0 @@
-cron:
-  - description: "generic cron job"
-    url: /automatron/cron
-    schedule: every 1 mins

@@ -1,8 +1,0 @@
-runtime: nodejs10
-automatic_scaling:
-  target_cpu_utilization: 0.95
-  target_throughput_utilization: 0.95
-  max_instances: 1
-  min_instances: 1
-inbound_services:
-  - warmup

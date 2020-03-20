@@ -27,7 +27,7 @@ app.use((req, res, next) => {
           cb()
         }
       },
-      reload: () => {}
+      reload: () => { }
     }
   }
   next()
@@ -89,6 +89,32 @@ app.post('/webhook', (req, res, next) => {
     })(req, res, next)
   })
 })
+
+app.post(
+  '/slack',
+  require('body-parser').json(),
+  (req, res, next) => {
+    if (req.body.type === 'url_verification') {
+      res.set('Content-Type', 'text/plain').send(req.body.challenge)
+      return
+    }
+    next()
+  },
+  endpoint(async (context, req, services) => {
+    if (req.body.type === 'event_callback') {
+      if (req.body.event.user === req.env.SLACK_USER_ID) {
+        const text = String(req.body.event.text)
+        const slackClient = services.slack
+        const reply = await handleTextMessage(context, text)
+        await slackClient.pushMessage({
+          text: `\`\`\`${JSON.stringify(reply, null, 2)}\`\`\``
+        })
+      }
+    }
+
+    return 1
+  })
+)
 
 app.post(
   '/post',
@@ -173,25 +199,34 @@ function requireApiKey(req: Request, res: Response, next: NextFunction) {
   }
   next()
 }
+
+class Slack {
+  constructor(private webhookUrl: string) { }
+  async pushMessage(message: { text: string }) {
+    await require('axios').post(this.webhookUrl, message)
+  }
+}
+
 function endpoint(
   f: (
     context: AutomatronContext,
     req: Request,
-    services: { line: Client }
+    services: { line: Client; slack: Slack }
   ) => Promise<any>
 ): RequestHandler {
   return async (req, res, next) => {
     const context = req.webtaskContext
     const lineConfig = getLineConfig(req)
-    const client = new Client(lineConfig)
+    const lineClient = new Client(lineConfig)
+    const slackClient = new Slack(context.secrets.SLACK_WEBHOOK_URL)
     try {
-      const result = await f(context, req, { line: client })
+      const result = await f(context, req, { line: lineClient, slack: slackClient })
       res.json({ ok: true, result })
     } catch (e) {
       console.error('An error has been caught in the endpoint...')
       logError(e)
       try {
-        await client.pushMessage(
+        await lineClient.pushMessage(
           context.secrets.LINE_USER_ID,
           createErrorMessage(e)
         )

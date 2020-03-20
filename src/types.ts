@@ -2,7 +2,6 @@ import { BotSecrets } from './BotSecrets'
 
 export interface AutomatronContext {
   secrets: BotSecrets
-  reload(): void
 }
 
 declare global {

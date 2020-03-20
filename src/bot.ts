@@ -14,19 +14,8 @@ import { handleTextMessage, handleImage } from './MessageHandler'
 
 const app = express()
 
-let _storedData: any = {}
 function getAutomatronContext(req: Request): AutomatronContext {
-  return {
-    secrets: req.env,
-    storage: {
-      get: cb => cb(void 0, _storedData),
-      set: (value, cb) => {
-        _storedData = JSON.parse(JSON.stringify(value))
-        cb()
-      }
-    },
-    reload: () => { }
-  }
+  return { secrets: req.env }
 }
 
 async function handleWebhook(
@@ -147,16 +136,6 @@ app.post(
     const reply = await handleTextMessage(context, text)
     await client.pushMessage(context.secrets.LINE_USER_ID, toMessages(reply))
     return reply
-  })
-)
-
-app.post(
-  '/reload',
-  require('body-parser').json(),
-  requireApiKey,
-  endpoint(async (context, req, services) => {
-    context.reload()
-    return { ok: true }
   })
 )
 

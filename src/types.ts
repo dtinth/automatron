@@ -13,7 +13,7 @@ declare global {
   module Express {
     interface Request {
       webtaskContext: AutomatronContext
-      env?: BotSecrets
+      env: BotSecrets
     }
   }
 }

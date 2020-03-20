@@ -16,4 +16,9 @@ declare global {
       env: BotSecrets
     }
   }
+  module NodeJS {
+    interface Global {
+      automatronSlackEventCache?: Set<string>
+    }
+  }
 }

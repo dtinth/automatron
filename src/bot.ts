@@ -102,8 +102,18 @@ app.post(
   },
   endpoint(async (context, req, services) => {
     if (req.body.type === 'event_callback') {
+      let eventCache = global.automatronSlackEventCache
+      if (!eventCache) {
+        eventCache = new Set()
+        global.automatronSlackEventCache = eventCache
+      }
+      const eventId = req.body.event_id
+      if (eventCache.has(eventId)) {
+        return
+      }
+      eventCache.add(eventId)
       if (req.body.event.user === req.env.SLACK_USER_ID) {
-        const text = String(req.body.event.text)
+        const text = String(req.body.event.text).replace(/&gt;/g, '>').replace(/&lt;/g, '>').replace(/&amp;/g, '&')
         const slackClient = services.slack
         const reply = await handleTextMessage(context, text)
         await slackClient.pushMessage({

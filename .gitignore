@@ -5,3 +5,4 @@ node_modules
 /automatron.js.map
 /dist/
 *.gz
+webpack.stats.json

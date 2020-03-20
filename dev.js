@@ -3,7 +3,7 @@ require('dotenv').config()
 if (!process.env.GOOGLE_CLOUD_PROJECT)
   throw new Error('Missing GOOGLE_CLOUD_PROJECT environment variable.')
 
-const axios = require('axios')
+const fs = require('fs')
 const ora = require('ora')()
 const bucketName = `${process.env.GOOGLE_CLOUD_PROJECT}-evalaas`
 const { Storage } = require('@google-cloud/storage')
@@ -47,6 +47,9 @@ require('yargs')
           (gzippedBuffer.length / 1024).toFixed(1)
         )
         require('fs').writeFileSync('automatron.js.gz', gzippedBuffer)
+
+        // https://github.com/zeit/ncc/pull/516#issuecomment-601708133
+        // require('fs').writeFileSync('webpack.stats.json', result.stats.toJson())
         push()
       })
       ncc.rebuild(() => {

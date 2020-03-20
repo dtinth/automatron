@@ -76,7 +76,9 @@ export async function handleTextMessage(
   } else if ((match = message.match(/^([ivxlcdm]+)$/i))) {
     return `${match[1]} = ${decodeRomanNumerals(match[1])}`
   } else if (message.startsWith(';')) {
-    const code = message.substr(1)
+    const code = require('livescript').compile(message.substr(1), {
+      bare: true
+    })
     console.log('Code compilation result', code)
     const runner = new Function(
       ...['prelude', 'code', 'context', 'state'],
@@ -89,7 +91,7 @@ export async function handleTextMessage(
     }).then(data => (data || {}).jsState || '{}')
     const prevState = JSON.parse(prevStateSnapshot)
     const [value, nextState] = runner(
-      {},
+      require('prelude-ls'),
       code,
       context,
       prevState

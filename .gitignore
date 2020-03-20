@@ -3,3 +3,6 @@
 node_modules
 /automatron.js
 /automatron.js.map
+/dist/
+*.gz
+webpack.stats.json

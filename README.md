@@ -8,7 +8,7 @@ I recommend every developer to try creating their own personal assistant chat bo
 It’s a great way to practice coding and improve problem solving skills.
 And it helps make life more convenient!
 
-It is written in TypeScript and runs [Google App Engine Node.js Standard Environment](https://cloud.google.com/appengine/docs/standard/nodejs/).
+It is written in TypeScript and runs on [Google Cloud Run](https://cloud.google.com/run) on top of [evalaas](https://github.com/dtinth/evalaas) JavaScript-execution platform.
 
 ## features
 

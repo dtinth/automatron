@@ -14,6 +14,10 @@ import { handleTextMessage, handleImage } from './MessageHandler'
 
 const app = express()
 
+function getAutomatronContext(req: Request): AutomatronContext {
+  return { secrets: req.env }
+}
+
 async function handleWebhook(
   context: AutomatronContext,
   events: WebhookEvent[],
@@ -72,6 +76,42 @@ app.post('/webhook', (req, res, next) => {
 })
 
 app.post(
+  '/slack',
+  require('body-parser').json(),
+  (req, res, next) => {
+    if (req.body.type === 'url_verification') {
+      res.set('Content-Type', 'text/plain').send(req.body.challenge)
+      return
+    }
+    next()
+  },
+  endpoint(async (context, req, services) => {
+    if (req.body.type === 'event_callback') {
+      let eventCache = global.automatronSlackEventCache
+      if (!eventCache) {
+        eventCache = new Set()
+        global.automatronSlackEventCache = eventCache
+      }
+      const eventId = req.body.event_id
+      if (eventCache.has(eventId)) {
+        return
+      }
+      eventCache.add(eventId)
+      if (req.body.event.user === req.env.SLACK_USER_ID) {
+        const text = String(req.body.event.text).replace(/&gt;/g, '>').replace(/&lt;/g, '>').replace(/&amp;/g, '&')
+        const slackClient = services.slack
+        const reply = await handleTextMessage(context, text)
+        await slackClient.pushMessage({
+          text: `\`\`\`${JSON.stringify(reply, null, 2)}\`\`\``
+        })
+      }
+    }
+
+    return 1
+  })
+)
+
+app.post(
   '/post',
   require('body-parser').json(),
   requireApiKey,
@@ -96,16 +136,6 @@ app.post(
     const reply = await handleTextMessage(context, text)
     await client.pushMessage(context.secrets.LINE_USER_ID, toMessages(reply))
     return reply
-  })
-)
-
-app.post(
-  '/reload',
-  require('body-parser').json(),
-  requireApiKey,
-  endpoint(async (context, req, services) => {
-    context.reload()
-    return { ok: true }
   })
 )
 
@@ -148,31 +178,40 @@ app.get(
 )
 
 function requireApiKey(req: Request, res: Response, next: NextFunction) {
-  const context = req.webtaskContext
+  const context = getAutomatronContext(req)
   if (req.body.key !== context.secrets.API_KEY) {
     return res.status(401).json({ error: 'Invalid API key' })
   }
   next()
 }
+
+class Slack {
+  constructor(private webhookUrl: string) { }
+  async pushMessage(message: { text: string }) {
+    await require('axios').post(this.webhookUrl, message)
+  }
+}
+
 function endpoint(
   f: (
     context: AutomatronContext,
     req: Request,
-    services: { line: Client }
+    services: { line: Client; slack: Slack }
   ) => Promise<any>
 ): RequestHandler {
   return async (req, res, next) => {
-    const context = req.webtaskContext
+    const context = getAutomatronContext(req)
     const lineConfig = getLineConfig(req)
-    const client = new Client(lineConfig)
+    const lineClient = new Client(lineConfig)
+    const slackClient = new Slack(context.secrets.SLACK_WEBHOOK_URL)
     try {
-      const result = await f(context, req, { line: client })
+      const result = await f(context, req, { line: lineClient, slack: slackClient })
       res.json({ ok: true, result })
     } catch (e) {
       console.error('An error has been caught in the endpoint...')
       logError(e)
       try {
-        await client.pushMessage(
+        await lineClient.pushMessage(
           context.secrets.LINE_USER_ID,
           createErrorMessage(e)
         )
@@ -194,23 +233,23 @@ function logError(e: any) {
 }
 
 function getLineConfig(req: Request) {
-  const ctx = req.webtaskContext
+  const context = getAutomatronContext(req)
   return {
-    channelAccessToken: ctx.secrets.LINE_CHANNEL_ACCESS_TOKEN,
-    channelSecret: ctx.secrets.LINE_CHANNEL_SECRET
+    channelAccessToken: context.secrets.LINE_CHANNEL_ACCESS_TOKEN,
+    channelSecret: context.secrets.LINE_CHANNEL_SECRET
   }
 }
 
 function readAsBuffer(stream: Stream) {
   return new Promise((resolve, reject) => {
-    stream.on('error', e => {
+    stream.on('error', (e: Error) => {
       reject(e)
     })
     const bufs: Buffer[] = []
     stream.on('end', () => {
       resolve(Buffer.concat(bufs))
     })
-    stream.on('data', buf => {
+    stream.on('data', (buf: Buffer) => {
       bufs.push(buf)
     })
   })

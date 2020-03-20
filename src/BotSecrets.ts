@@ -21,4 +21,8 @@ export interface BotSecrets {
   EXPENSE_PACEMAKER: string
   /** The contents of Google Cloud service account JSON file, base64-encoded, for use with Cloud Vision */
   CLOUD_VISION_SERVICE_ACCOUNT: string
+  /** Slack webhook URL */
+  SLACK_WEBHOOK_URL: string
+  /** My user ID, so that the bot receives commands from me only */
+  SLACK_USER_ID: string
 }

@@ -67,8 +67,8 @@ app.post('/webhook', (req, res, next) => {
   middleware(lineConfig)(req, res, async err => {
     if (err) return next(err)
     endpoint(async (context, req, services) => {
-      const client = services.line
-      const data = await handleWebhook(context, req.body.events, client)
+      const lineClient = services.line
+      const data = await handleWebhook(context, req.body.events, lineClient)
       console.log('Response:', data)
       return data
     })(req, res, next)
@@ -116,9 +116,9 @@ app.post(
   require('body-parser').json(),
   requireApiKey,
   endpoint(async (context, req, services) => {
-    const client = services.line
+    const lineClient = services.line
     const messages = toMessages(req.body.data)
-    await client.pushMessage(context.secrets.LINE_USER_ID, messages)
+    await lineClient.pushMessage(context.secrets.LINE_USER_ID, messages)
   })
 )
 
@@ -128,13 +128,13 @@ app.post(
   requireApiKey,
   endpoint(async (context, req, services) => {
     const text = String(req.body.text)
-    const client = services.line
-    await client.pushMessage(
+    const lineClient = services.line
+    await lineClient.pushMessage(
       context.secrets.LINE_USER_ID,
       toMessages('received: ' + text + ` [from ${req.body.source}]`)
     )
     const reply = await handleTextMessage(context, text)
-    await client.pushMessage(context.secrets.LINE_USER_ID, toMessages(reply))
+    await lineClient.pushMessage(context.secrets.LINE_USER_ID, toMessages(reply))
     return reply
   })
 )

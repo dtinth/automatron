@@ -12,7 +12,6 @@ export interface AutomatronContext {
 declare global {
   module Express {
     interface Request {
-      webtaskContext: AutomatronContext
       env: BotSecrets
     }
   }

@@ -14,24 +14,20 @@ import { handleTextMessage, handleImage } from './MessageHandler'
 
 const app = express()
 
-// Shim for running automatron on evalaas
 let _storedData: any = {}
-app.use((req, res, next) => {
-  if (req.env) {
-    req.webtaskContext = {
-      secrets: req.env,
-      storage: {
-        get: cb => cb(void 0, _storedData),
-        set: (value, cb) => {
-          _storedData = JSON.parse(JSON.stringify(value))
-          cb()
-        }
-      },
-      reload: () => { }
-    }
+function getAutomatronContext(req: Request): AutomatronContext {
+  return {
+    secrets: req.env,
+    storage: {
+      get: cb => cb(void 0, _storedData),
+      set: (value, cb) => {
+        _storedData = JSON.parse(JSON.stringify(value))
+        cb()
+      }
+    },
+    reload: () => { }
   }
-  next()
-})
+}
 
 async function handleWebhook(
   context: AutomatronContext,
@@ -203,7 +199,7 @@ app.get(
 )
 
 function requireApiKey(req: Request, res: Response, next: NextFunction) {
-  const context = req.webtaskContext
+  const context = getAutomatronContext(req)
   if (req.body.key !== context.secrets.API_KEY) {
     return res.status(401).json({ error: 'Invalid API key' })
   }
@@ -225,7 +221,7 @@ function endpoint(
   ) => Promise<any>
 ): RequestHandler {
   return async (req, res, next) => {
-    const context = req.webtaskContext
+    const context = getAutomatronContext(req)
     const lineConfig = getLineConfig(req)
     const lineClient = new Client(lineConfig)
     const slackClient = new Slack(context.secrets.SLACK_WEBHOOK_URL)
@@ -258,10 +254,10 @@ function logError(e: any) {
 }
 
 function getLineConfig(req: Request) {
-  const ctx = req.webtaskContext
+  const context = getAutomatronContext(req)
   return {
-    channelAccessToken: ctx.secrets.LINE_CHANNEL_ACCESS_TOKEN,
-    channelSecret: ctx.secrets.LINE_CHANNEL_SECRET
+    channelAccessToken: context.secrets.LINE_CHANNEL_ACCESS_TOKEN,
+    channelSecret: context.secrets.LINE_CHANNEL_SECRET
   }
 }
 

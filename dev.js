@@ -30,7 +30,16 @@ require('yargs')
           console.error(result.err)
           return
         }
-        const codeBuffer = Buffer.from(result.code)
+        let code = result.code
+        const expectedFooter = '//# sourceMappingURL=index.js.map'
+        const mapBase64 = Buffer.from(result.map).toString('base64')
+        const mapComment = `//# sourceMappingURL=data:application/json;charset=utf-8;base64,${mapBase64}`
+        if (code.endsWith(expectedFooter)) {
+          code = code.slice(0, -expectedFooter.length) + mapComment
+        } else {
+          code += '\n' + mapComment
+        }
+        const codeBuffer = Buffer.from(code)
         const gzippedBuffer = require('zlib').gzipSync(codeBuffer)
         console.log(
           'Compiled / Code %skb (%skb gzipped)',

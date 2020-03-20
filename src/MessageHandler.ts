@@ -84,11 +84,8 @@ export async function handleTextMessage(
       ...['prelude', 'code', 'context', 'state'],
       'with (prelude) { with (state) { return [ eval(code), state ] } }'
     )
-    const prevStateSnapshot = await new Promise<any>((resolve, reject) => {
-      context.storage.get((error, data) =>
-        error ? reject(error) : resolve(data)
-      )
-    }).then(data => (data || {}).jsState || '{}')
+    // TODO: Load storage to `prevStateSnapshot`
+    const prevStateSnapshot = '{}'
     const prevState = JSON.parse(prevStateSnapshot)
     const [value, nextState] = runner(
       require('prelude-ls'),
@@ -104,11 +101,7 @@ export async function handleTextMessage(
         type: 'text',
         text: 'state = ' + JSON.stringify(nextState, null, 2)
       })
-      await new Promise((resolve, reject) => {
-        context.storage.set({ jsState: nextStateSnapshot }, error =>
-          error ? reject(error) : resolve()
-        )
-      })
+      // TODO: Save `nextStateSnapshot` to storage
     }
     return [
       // createBubble('livescript', result, {

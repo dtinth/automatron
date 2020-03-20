@@ -12,16 +12,6 @@ export function toMessages(data: any): Message[] {
   return data
 }
 
-export function createErrorMessage(error: Error) {
-  const title =
-    (error.name || 'Error') + (error.message ? `: ${error.message}` : '')
-  return createBubble(title, String(error.stack || error), {
-    headerBackground: '#E82822',
-    headerColor: '#ffffff',
-    textSize: 'sm'
-  })
-}
-
 export function createBubble(
   title: string,
   text: string | FlexBox,
@@ -54,10 +44,10 @@ export function createBubble(
     body:
       typeof text === 'string'
         ? {
-            type: 'box',
-            layout: 'vertical',
-            contents: [{ type: 'text', text: text, wrap: true, size: textSize }]
-          }
+          type: 'box',
+          layout: 'vertical',
+          contents: [{ type: 'text', text: text, wrap: true, size: textSize }]
+        }
         : text
   }
   if (footer) {
@@ -65,18 +55,18 @@ export function createBubble(
     data.footer =
       typeof footer === 'string'
         ? {
-            type: 'box',
-            layout: 'vertical',
-            contents: [
-              {
-                type: 'text',
-                text: footer,
-                wrap: true,
-                size: 'sm',
-                color: '#8b8685'
-              }
-            ]
-          }
+          type: 'box',
+          layout: 'vertical',
+          contents: [
+            {
+              type: 'text',
+              text: footer,
+              wrap: true,
+              size: 'sm',
+              color: '#8b8685'
+            }
+          ]
+        }
         : footer
   }
   return {

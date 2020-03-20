@@ -8,7 +8,8 @@ import { Client, middleware, WebhookEvent, MessageEvent } from '@line/bot-sdk'
 import { Stream } from 'stream'
 import { AutomatronContext } from './types'
 import { handleSMS } from './SMSHandler'
-import { toMessages, createErrorMessage } from './LINEMessageUtilities'
+import { toMessages } from './LINEMessageUtilities'
+import { createErrorMessage, SlackMessage } from "./SlackMessageUtilities"
 import { getCronTable } from './Cron'
 import { handleTextMessage, handleImage } from './MessageHandler'
 
@@ -187,7 +188,7 @@ function requireApiKey(req: Request, res: Response, next: NextFunction) {
 
 class Slack {
   constructor(private webhookUrl: string) { }
-  async pushMessage(message: { text: string }) {
+  async pushMessage(message: SlackMessage) {
     await require('axios').post(this.webhookUrl, message)
   }
 }
@@ -211,10 +212,7 @@ function endpoint(
       console.error('An error has been caught in the endpoint...')
       logError(e)
       try {
-        await lineClient.pushMessage(
-          context.secrets.LINE_USER_ID,
-          createErrorMessage(e)
-        )
+        await slackClient.pushMessage(createErrorMessage(e))
       } catch (ee) {
         console.error('Cannot send error message to LINE!')
         logError(ee)

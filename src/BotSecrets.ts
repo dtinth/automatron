@@ -7,8 +7,6 @@ export interface BotSecrets {
   LINE_CHANNEL_ACCESS_TOKEN: string
   /** My user ID, so that the bot receives commands from me only */
   LINE_USER_ID: string
-  /** The URL to [CloudMQTT](https://www.cloudmqtt.com/) instance used for [home automation](../README.md#home-automation) */
-  MQTT_URL: string
   /** Self-explanatory */
   AIRTABLE_API_KEY: string
   /** The ID of the Airtable base used for tracking expenses (should start with ‘app’) */

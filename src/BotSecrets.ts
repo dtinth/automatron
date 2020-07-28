@@ -17,8 +17,6 @@ export interface BotSecrets {
   AIRTABLE_CRON_BASE: string
   /** Two numbers in form of A/B, where A is usage budget per day (rolls over to the next day) and B is starting budget */
   EXPENSE_PACEMAKER: string
-  /** The contents of Google Cloud service account JSON file, base64-encoded, for use with Cloud Vision */
-  CLOUD_VISION_SERVICE_ACCOUNT: string
   /** Slack webhook URL */
   SLACK_WEBHOOK_URL: string
   /** My user ID, so that the bot receives commands from me only */

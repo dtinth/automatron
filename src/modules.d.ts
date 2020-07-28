@@ -1,6 +1,6 @@
 declare module '@google-cloud/vision' {
   export class ImageAnnotatorClient {
-    constructor(options: any)
+    constructor(options?: any)
     documentTextDetection(
       imageBuffer: Buffer
     ): Promise<

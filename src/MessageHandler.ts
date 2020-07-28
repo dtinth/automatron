@@ -117,16 +117,10 @@ export async function handleTextMessage(
   return 'unrecognized message...'
 }
 export async function handleImage(
-  context: AutomatronContext,
+  _context: AutomatronContext,
   imageBuffer: Buffer
 ) {
-  const credentials = JSON.parse(
-    Buffer.from(
-      context.secrets.CLOUD_VISION_SERVICE_ACCOUNT,
-      'base64'
-    ).toString()
-  )
-  const imageAnnotator = new vision.ImageAnnotatorClient({ credentials })
+  const imageAnnotator = new vision.ImageAnnotatorClient()
   const results = await imageAnnotator.documentTextDetection(imageBuffer)
   const fullTextAnnotation = results[0].fullTextAnnotation
   const blocks: string[] = []

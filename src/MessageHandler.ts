@@ -9,6 +9,7 @@ export async function handleTextMessage(
   context: AutomatronContext,
   message: string
 ) {
+  message = message.trim()
   let match: RegExpMatchArray | null
   if (message === 'ac on' || message === 'sticker:2:27') {
     await sendHomeCommand(context, 'ac on')

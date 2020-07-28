@@ -22,7 +22,7 @@ It is written in TypeScript and runs on [Google Cloud Run](https://cloud.google.
 
 ![home automation](./images/home_automation.png)
 
-I have a Raspberry Pi set up which can [control lights](https://github.com/dtinth/hue.sh), [air conditioner](https://medium.com/@dtinth/remotely-turning-on-my-air-conditioner-through-google-assistant-1a1441471e9d), and [smart plugs](https://ifttt.com/services/kasa). It receives commands via [CloudMQTT](https://www.cloudmqtt.com/) and performs the action, then reports back to automatron via [its API](#cli-api).
+I have a Raspberry Pi set up which can [control lights](https://github.com/dtinth/hue.sh), [air conditioner](https://medium.com/@dtinth/remotely-turning-on-my-air-conditioner-through-google-assistant-1a1441471e9d), and [smart plugs](https://ifttt.com/services/kasa). It receives commands via [Google Cloud IoT Core](https://cloud.google.com/iot-core/), performs the action, and then reports back to automatron via [its API](#cli-api).
 
 ### expense tracking
 

@@ -25,4 +25,6 @@ export interface BotSecrets {
   SLACK_WEBHOOK_URL: string
   /** My user ID, so that the bot receives commands from me only */
   SLACK_USER_ID: string
+  /** Google Cloud IoT Core device path to send */
+  CLOUD_IOT_CORE_DEVICE_PATH: string
 }

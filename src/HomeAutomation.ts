@@ -1,33 +1,32 @@
-import mqtt from 'mqtt'
+import * as iot from '@google-cloud/iot'
 import { AutomatronContext } from './types'
+
+const iotClient = new iot.v1.DeviceManagerClient()
 
 export async function sendHomeCommand(
   context: AutomatronContext,
   cmd: string | string[]
 ) {
-  var client = await getMQTTClient(context)
-  if (Array.isArray(cmd)) {
-    cmd.forEach(c => client.publish('home', c))
-  } else {
-    client.publish('home', cmd)
-  }
-}
-
-async function getMQTTClient(context: AutomatronContext) {
-  const unsafeGlobal = global as any
-  if (unsafeGlobal.automatronMqttPromise) {
-    return unsafeGlobal.automatronMqttPromise
-  }
-  const promise = new Promise((resolve, reject) => {
-    var client = mqtt.connect(context.secrets.MQTT_URL)
-    client.on('connect', function() {
-      resolve(client)
+  const cmds = Array.isArray(cmd) ? cmd : [cmd]
+  const formattedName = context.secrets.CLOUD_IOT_CORE_DEVICE_PATH
+  return Promise.all(
+    cmds.map(async (command) => {
+      const id =
+        new Date().toJSON() +
+        Math.floor(Math.random() * 10000)
+          .toString()
+          .padStart(2, '0')
+      const commandMessage = JSON.stringify({
+        id: id,
+        topic: 'home',
+        data: command,
+      })
+      const binaryData = Buffer.from(commandMessage)
+      const request = {
+        name: formattedName,
+        binaryData: binaryData,
+      }
+      await iotClient.sendCommandToDevice(request)
     })
-    client.on('error', function(error) {
-      reject(error)
-      unsafeGlobal.automatronMqttPromise = null
-    })
-  })
-  unsafeGlobal.automatronMqttPromise = promise
-  return promise
+  )
 }

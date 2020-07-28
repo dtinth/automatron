@@ -67,7 +67,7 @@ export async function handleTextMessage(
       h: 'health',
       m: 'miscellaneous',
       o: 'occasion',
-      l: 'lodging'
+      l: 'lodging',
     } as {
       [k: string]: string
     })[m[3].toLowerCase()]
@@ -77,7 +77,7 @@ export async function handleTextMessage(
     return `${match[1]} = ${decodeRomanNumerals(match[1])}`
   } else if (message.startsWith(';')) {
     const code = require('livescript').compile(message.substr(1), {
-      bare: true
+      bare: true,
     })
     console.log('Code compilation result', code)
     const runner = new Function(
@@ -99,7 +99,7 @@ export async function handleTextMessage(
     if (nextStateSnapshot !== prevStateSnapshot) {
       extraMessages.push({
         type: 'text',
-        text: 'state = ' + JSON.stringify(nextState, null, 2)
+        text: 'state = ' + JSON.stringify(nextState, null, 2),
       })
       // TODO: Save `nextStateSnapshot` to storage
     }
@@ -110,7 +110,7 @@ export async function handleTextMessage(
       //   textSize: 'sm'
       // }),
       { type: 'text', text: result },
-      ...extraMessages
+      ...extraMessages,
     ]
   }
   return 'unrecognized message...'
@@ -131,10 +131,10 @@ export async function handleImage(
   const blocks: string[] = []
   for (const page of fullTextAnnotation.pages) {
     blocks.push(
-      ...page.blocks.map(block => {
+      ...page.blocks.map((block) => {
         return block.paragraphs
-          .map(p =>
-            p.words.map(w => w.symbols.map(s => s.text).join('')).join(' ')
+          .map((p) =>
+            p.words.map((w) => w.symbols.map((s) => s.text).join('')).join(' ')
           )
           .join('\n\n')
       })
@@ -149,7 +149,7 @@ export async function handleImage(
       outBlocks.push(
         blocks
           .slice(processedIndex, targetIndex)
-          .map(x => `・ ${x}`)
+          .map((x) => `・ ${x}`)
           .join('\n')
       )
       processedIndex = targetIndex
@@ -157,5 +157,5 @@ export async function handleImage(
     return outBlocks
   }
   const responses = blocksToResponses(blocks)
-  return responses.map(r => ({ type: 'text', text: r }))
+  return responses.map((r) => ({ type: 'text', text: r }))
 }

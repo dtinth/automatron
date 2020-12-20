@@ -77,9 +77,13 @@ export async function handleTextMessage(
   } else if ((match = message.match(/^([ivxlcdm]+)$/i))) {
     return `${match[1]} = ${decodeRomanNumerals(match[1])}`
   } else if (message.startsWith(';')) {
-    const code = require('livescript').compile(message.substr(1), {
-      bare: true,
-    })
+    const code = require('livescript')
+      .compile(message.substr(1), {
+        run: true,
+        print: true,
+        header: false,
+      })
+      .replace(/^\(function/, '(async function')
     console.log('Code compilation result', code)
     const runner = new Function(
       ...['prelude', 'code', 'context', 'state'],

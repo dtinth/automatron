@@ -27,6 +27,7 @@
     "body-parser": "1.18.3",
     "dotenv": "^7.0.0",
     "express": "4.16.4",
+    "jsonwebtoken": "^8.5.1",
     "livescript": "1.6.0",
     "lodash": "^4.17.11",
     "mqtt": "2.18.8",
@@ -37,6 +38,7 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.0",
+    "@types/jsonwebtoken": "^8.5.0",
     "@types/node": "^13.9.2",
     "@zeit/ncc": "^0.21.1",
     "execa": "^1.0.0",

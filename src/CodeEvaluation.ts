@@ -1,5 +1,6 @@
 import { AutomatronContext } from './types'
 import tweetnacl from 'tweetnacl'
+import jsonwebtoken from 'jsonwebtoken'
 import axios from 'axios'
 import Encrypted from '@dtinth/encrypted'
 
@@ -24,16 +25,20 @@ export async function evaluateCode(input: string, context: AutomatronContext) {
   const self: any = {}
   self.encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
   self.require = (id: string) => {
-    const availableModules = { axios, tweetnacl }
-    const module = {}.hasOwnProperty.call(availableModules, id)
-    if (!module) {
+    const availableModules: { [id: string]: any } = {
+      axios,
+      tweetnacl,
+      jsonwebtoken,
+    }
+    const available = {}.hasOwnProperty.call(availableModules, id)
+    if (!available) {
       throw new Error(
         `Module ${id} not available; available modules: ${Object.keys(
           availableModules
         )}`
       )
     }
-    return module
+    return availableModules[id]
   }
 
   // Execute user prelude
@@ -50,7 +55,10 @@ export async function evaluateCode(input: string, context: AutomatronContext) {
     userPreludeResponse.data.content,
     'base64'
   ).toString()
-  new Function('self', userPrelude)(self)
+  new Function(...['self', 'code'], 'with (self) { return eval(code) }')(
+    self,
+    userPrelude
+  )
 
   const [value, nextState] = runner(
     require('prelude-ls'),
@@ -59,7 +67,8 @@ export async function evaluateCode(input: string, context: AutomatronContext) {
     context,
     prevState
   )
-  let result = require('util').inspect(await Promise.resolve(value))
+  const returnedValue = await Promise.resolve(value)
+  let result = postProcessResult(returnedValue)
   const extraMessages = []
   const nextStateSnapshot = JSON.stringify(nextState)
   if (nextStateSnapshot !== prevStateSnapshot) {
@@ -70,4 +79,11 @@ export async function evaluateCode(input: string, context: AutomatronContext) {
     // TODO: Save `nextStateSnapshot` to storage
   }
   return { result, extraMessages }
+}
+
+function postProcessResult(returnedValue: any) {
+  if (typeof returnedValue === 'string') {
+    return returnedValue
+  }
+  return require('util').inspect(returnedValue)
 }

@@ -2,6 +2,15 @@
 # yarn lockfile v1
 
 
+"@dtinth/encrypted@^0.2.1":
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/@dtinth/encrypted/-/encrypted-0.2.1.tgz#37549d4c1778820e705a357bccec7416fc2cf430"
+  integrity sha512-5xWFwD7tozYXaLzuRhCQL0XYqH0+SpmlU+TK3uKG8lHArLWWpPp7cAYdGhbWQ9LK5W0/+FGvRyUTJ7mSNigvRQ==
+  dependencies:
+    "@types/node" "*"
+    dotenv "^8.2.0"
+    tweetnacl "^1.0.3"
+
 "@google-cloud/common@^0.32.0":
   version "0.32.1"
   resolved "https://registry.yarnpkg.com/@google-cloud/common/-/common-0.32.1.tgz#6a32c340172cea3db6674d0e0e34e78740a0073f"
@@ -1123,6 +1132,11 @@ dotenv@^7.0.0:
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-7.0.0.tgz#a2be3cd52736673206e8a85fb5210eea29628e7c"
   integrity sha512-M3NhsLbV1i6HuGzBUH8vXrtxOk+tWmzWKDMbAVSUp3Zsjm7ywFeuwrUXhmhQyRK1q5B5GGy7hcXPbj3bnfZg2g==
+
+dotenv@^8.2.0:
+  version "8.2.0"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-8.2.0.tgz#97e619259ada750eea3e4ea3e26bceea5424b16a"
+  integrity sha512-8sJ78ElpbDJBHNeBzUbUVLsqKdccaa/BXF1uPTw3GrvQTBgrQrtObr2mUrE38vzYd8cEv+m/JBfDLioYcfXoaw==
 
 duplexify@^3.5.0, duplexify@^3.5.1, duplexify@^3.6.0:
   version "3.7.1"

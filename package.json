@@ -29,7 +29,7 @@
     "express": "4.16.4",
     "jsonwebtoken": "^8.5.1",
     "livescript": "1.6.0",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.19",
     "mqtt": "2.18.8",
     "prelude-ls": "1.1.2",
     "transaction-parser-th": "0.1.1",

@@ -1,5 +1,6 @@
 import { AutomatronContext } from './types'
-import nacl from 'tweetnacl'
+import tweetnacl from 'tweetnacl'
+import axios from 'axios'
 
 export async function evaluateCode(input: string, context: AutomatronContext) {
   const code = require('livescript')
@@ -18,7 +19,18 @@ export async function evaluateCode(input: string, context: AutomatronContext) {
   const prevStateSnapshot = '{}'
   const prevState = JSON.parse(prevStateSnapshot)
   const self: any = {}
-  self.nacl = nacl
+  self.require = (id: string) => {
+    const availableModules = { axios, tweetnacl }
+    const module = {}.hasOwnProperty.call(availableModules, id)
+    if (!module) {
+      throw new Error(
+        `Module ${id} not available; available modules: ${Object.keys(
+          availableModules
+        )}`
+      )
+    }
+    return module
+  }
   const [value, nextState] = runner(
     require('prelude-ls'),
     self,

@@ -23,4 +23,6 @@ export interface BotSecrets {
   SLACK_USER_ID: string
   /** Google Cloud IoT Core device path to send */
   CLOUD_IOT_CORE_DEVICE_PATH: string
+  /** GitHub OAuth App credentials for making unauthenticated API calls with elevated rate limits. In form of "<client_id>:<client_secret>" */
+  GITHUB_OAUTH_APP_CREDENTIALS: string
 }

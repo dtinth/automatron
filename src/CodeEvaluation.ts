@@ -18,6 +18,8 @@ export async function evaluateCode(input: string, context: AutomatronContext) {
   // TODO: Load storage to `prevStateSnapshot`
   const prevStateSnapshot = '{}'
   const prevState = JSON.parse(prevStateSnapshot)
+
+  // Prepare "self" context
   const self: any = {}
   self.require = (id: string) => {
     const availableModules = { axios, tweetnacl }
@@ -31,6 +33,23 @@ export async function evaluateCode(input: string, context: AutomatronContext) {
     }
     return module
   }
+
+  // Execute user prelude
+  const userPreludeResponse = await axios.get(
+    'https://api.github.com/repos/dtinth/automatron-prelude/contents/prelude.js',
+    {
+      auth: {
+        username: context.secrets.GITHUB_OAUTH_APP_CREDENTIALS.split(':')[0],
+        password: context.secrets.GITHUB_OAUTH_APP_CREDENTIALS.split(':')[1],
+      },
+    }
+  )
+  const userPrelude = Buffer.from(
+    userPreludeResponse.data.content,
+    'base64'
+  ).toString()
+  new Function('self', userPrelude)(self)
+
   const [value, nextState] = runner(
     require('prelude-ls'),
     self,

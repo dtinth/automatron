@@ -25,6 +25,6 @@ export interface BotSecrets {
   CLOUD_IOT_CORE_DEVICE_PATH: string
   /** GitHub OAuth App credentials for making unauthenticated API calls with elevated rate limits. In form of "<client_id>:<client_secret>" */
   GITHUB_OAUTH_APP_CREDENTIALS: string
-  /** Private key for unsealing sealed data */
-  SEALED_PRIVATE_KEY: string
+  /** Encryption secret for decrypting */
+  ENCRYPTION_SECRET: string
 }

@@ -1,6 +1,7 @@
 import { AutomatronContext } from './types'
 import tweetnacl from 'tweetnacl'
 import axios from 'axios'
+import Encrypted from '@dtinth/encrypted'
 
 export async function evaluateCode(input: string, context: AutomatronContext) {
   const code = require('livescript')
@@ -21,6 +22,7 @@ export async function evaluateCode(input: string, context: AutomatronContext) {
 
   // Prepare "self" context
   const self: any = {}
+  self.encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
   self.require = (id: string) => {
     const availableModules = { axios, tweetnacl }
     const module = {}.hasOwnProperty.call(availableModules, id)

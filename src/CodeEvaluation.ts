@@ -24,6 +24,7 @@ export async function evaluateCode(input: string, context: AutomatronContext) {
   // Prepare "self" context
   const self: any = {}
   self.encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
+  self.extraMessages = []
   self.require = (id: string) => {
     const availableModules: { [id: string]: any } = {
       axios,
@@ -69,7 +70,7 @@ export async function evaluateCode(input: string, context: AutomatronContext) {
   )
   const returnedValue = await Promise.resolve(value)
   let result = postProcessResult(returnedValue)
-  const extraMessages = []
+  const extraMessages = [...self.extraMessages]
   const nextStateSnapshot = JSON.stringify(nextState)
   if (nextStateSnapshot !== prevStateSnapshot) {
     extraMessages.push({

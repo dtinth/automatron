@@ -1,4 +1,5 @@
 import { AutomatronContext } from './types'
+import nacl from 'tweetnacl'
 
 export async function evaluateCode(input: string, context: AutomatronContext) {
   const code = require('livescript')
@@ -11,12 +12,13 @@ export async function evaluateCode(input: string, context: AutomatronContext) {
   console.log('Code compilation result', code)
   const runner = new Function(
     ...['prelude', 'self', 'code', 'context', 'state'],
-    'with (prelude) { with (state) { return [ eval(code), state ] } }'
+    'with (prelude) { with (self) { with (state) { return [ eval(code), state ] } } }'
   )
   // TODO: Load storage to `prevStateSnapshot`
   const prevStateSnapshot = '{}'
   const prevState = JSON.parse(prevStateSnapshot)
-  const self = {}
+  const self: any = {}
+  self.nacl = nacl
   const [value, nextState] = runner(
     require('prelude-ls'),
     self,

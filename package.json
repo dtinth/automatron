@@ -31,6 +31,7 @@
     "mqtt": "2.18.8",
     "prelude-ls": "1.1.2",
     "transaction-parser-th": "0.1.1",
+    "tweetnacl": "^1.0.3",
     "verror": "^1.10.0"
   },
   "devDependencies": {

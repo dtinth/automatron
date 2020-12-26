@@ -2,6 +2,8 @@ import { AutomatronContext } from './types'
 import tweetnacl from 'tweetnacl'
 import jsonwebtoken from 'jsonwebtoken'
 import axios from 'axios'
+import crypto from 'crypto'
+import util from 'util'
 import Encrypted from '@dtinth/encrypted'
 
 export async function evaluateCode(input: string, context: AutomatronContext) {
@@ -30,6 +32,8 @@ export async function evaluateCode(input: string, context: AutomatronContext) {
       axios,
       tweetnacl,
       jsonwebtoken,
+      crypto,
+      util,
     }
     const available = {}.hasOwnProperty.call(availableModules, id)
     if (!available) {

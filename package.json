@@ -23,7 +23,7 @@
     "@line/bot-sdk": "6.3.0",
     "@slack/types": "^1.5.0",
     "airtable": "0.5.9",
-    "axios": "0.18.0",
+    "axios": "0.21.1",
     "body-parser": "1.18.3",
     "dotenv": "^7.0.0",
     "express": "4.16.4",

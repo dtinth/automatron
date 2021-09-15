@@ -1,0 +1,19 @@
+#!/usr/bin/env node
+
+const fs = require('fs')
+
+const encrypted = require('@dtinth/encrypted')(
+  process.env.SERVICE_ACCOUNT_ENCRYPTION_KEY
+)
+
+const encryptedServiceAccount = require('child_process')
+  .execSync('curl $SERVICE_ACCOUNT_URL')
+  .toString()
+  .trim()
+
+const decryptedServiceAccount = encrypted(encryptedServiceAccount)
+
+fs.writeFileSync(
+  process.env.HOME + '/.google-cloud-service-account.json',
+  JSON.stringify(decryptedServiceAccount, null, 2)
+)

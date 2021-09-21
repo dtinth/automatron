@@ -1,5 +1,5 @@
 {
-  "name": "fresh-app",
+  "name": "automatron-web",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
@@ -16,6 +16,12 @@
     "svelte-preprocess": "^4.7.2",
     "tslib": "^2.2.0",
     "typescript": "^4.3.2",
-    "vite": "^2.5.4"
+    "vite": "^2.5.4",
+    "vite-plugin-pwa": "^0.11.2"
+  },
+  "dependencies": {
+    "@dtinth/google-sign-in-controller": "^0.0.1-2",
+    "twind": "^0.16.16",
+    "twindtinth": "^0.1.0"
   }
 }

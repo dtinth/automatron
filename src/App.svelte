@@ -1,10 +1,30 @@
 <script lang="ts">
   import { signInController, currentUserInfo } from './GoogleSignIn'
+  import axios from 'axios'
+  import { pwaStatus } from './PWAStatus'
 
-  const submit: svelte.JSX.FormEventHandler<HTMLFormElement> = (e) => {
+  let displayedText = '…'
+
+  const submit: svelte.JSX.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault()
     const form = e.currentTarget
-    alert(form.text.value)
+    const text = form.text.value
+    displayedText = 'Sending request to automatron...'
+    const response = await axios.post(
+      '/api/automatron?action=text',
+      {
+        text: text,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${$currentUserInfo.idToken}`,
+        },
+      },
+    )
+    displayedText =
+      typeof response.data === 'string'
+        ? response.data
+        : JSON.stringify(response.data, null, 2)
   }
 </script>
 
@@ -45,13 +65,7 @@
         </button>
       </div>
     </form>
-    <div class="mt-6 pt-1 border-t border-#353433 text-#8b8685 text-right">
-      <button
-        on:click={() => confirm('Sign out?') && signInController.signOut()}
-      >
-        {$currentUserInfo.name}
-      </button>
-    </div>
+    <pre class="my-6" wrap="">{displayedText}</pre>
   {:else}
     <p class="text-center">
       <button
@@ -62,6 +76,20 @@
       </button>
     </p>
   {/if}
+  <div class="mt-6 pt-1 border-t border-#353433 text-#8b8685 flex">
+    <div class="flex-auto text-left">
+      {$pwaStatus.text}
+    </div>
+    <div class="flex-auto text-right">
+      {#if $currentUserInfo}
+        <button
+          on:click={() => confirm('Sign out?') && signInController.signOut()}
+        >
+          {$currentUserInfo.name}
+        </button>
+      {/if}
+    </div>
+  </div>
 </main>
 
 <style>

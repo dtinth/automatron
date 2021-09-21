@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port ${PORT:-3000}",
     "build": "vite build",
     "serve": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json"
@@ -21,6 +21,10 @@
   },
   "dependencies": {
     "@dtinth/google-sign-in-controller": "^0.0.1-2",
+    "@vercel/node": "^1.12.1",
+    "axios": "^0.21.4",
+    "cors": "^2.8.5",
+    "google-auth-library": "^7.9.2",
     "twind": "^0.16.16",
     "twindtinth": "^0.1.0"
   }

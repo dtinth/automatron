@@ -16,6 +16,7 @@ export default defineConfig({
           {
             src: '/automatron.png',
             type: 'image/png',
+            sizes: '256x256',
           },
         ],
         display: 'standalone',

@@ -17,15 +17,15 @@ require('yargs')
     '$0',
     'Watches for file change and uploads automatron code.',
     {},
-    async args => {
+    async (args) => {
       ora.info('Running bundler.')
       const ncc = require('@zeit/ncc')('./src/bot.ts', {
         externals: ['@google-cloud/vision', '@google-cloud/iot'],
         sourceMap: true,
         sourceMapRegister: false,
-        watch: true
+        watch: true,
       })
-      ncc.handler(result => {
+      ncc.handler((result) => {
         if (result.err) {
           console.error(result.err)
           return
@@ -58,6 +58,12 @@ require('yargs')
       ora.info('Watching for file changes.')
     }
   )
+  .command('download-env', 'Downloads environment file', {}, async () => {
+    await gcs
+      .bucket(bucketName)
+      .file('evalaas/automatron.env')
+      .download({ destination: 'automatron.env' })
+  })
   .strict()
   .help()
   .parse()

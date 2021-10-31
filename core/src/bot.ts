@@ -2,14 +2,14 @@ import express, {
   RequestHandler,
   Request,
   Response,
-  NextFunction
+  NextFunction,
 } from 'express'
 import { Client, middleware, WebhookEvent, MessageEvent } from '@line/bot-sdk'
 import { Stream } from 'stream'
 import { AutomatronContext } from './types'
 import { handleSMS } from './SMSHandler'
 import { toMessages } from './LINEMessageUtilities'
-import { createErrorMessage, SlackMessage } from "./SlackMessageUtilities"
+import { createErrorMessage, SlackMessage } from './SlackMessageUtilities'
 import { getCronTable } from './Cron'
 import { handleTextMessage, handleImage } from './MessageHandler'
 
@@ -55,7 +55,7 @@ async function handleWebhook(
       await client.replyMessage(replyToken, toMessages(reply))
     } else {
       await client.replyMessage(replyToken, [
-        { type: 'text', text: 'don’t know how to handle this yet!' }
+        { type: 'text', text: 'don’t know how to handle this yet!' },
       ])
     }
   }
@@ -65,7 +65,7 @@ async function handleWebhook(
 
 app.post('/webhook', (req, res, next) => {
   const lineConfig = getLineConfig(req)
-  middleware(lineConfig)(req, res, async err => {
+  middleware(lineConfig)(req, res, async (err) => {
     if (err) return next(err)
     endpoint(async (context, req, services) => {
       const lineClient = services.line
@@ -99,11 +99,14 @@ app.post(
       }
       eventCache.add(eventId)
       if (req.body.event.user === req.env.SLACK_USER_ID) {
-        const text = String(req.body.event.text).replace(/&gt;/g, '>').replace(/&lt;/g, '>').replace(/&amp;/g, '&')
+        const text = String(req.body.event.text)
+          .replace(/&gt;/g, '>')
+          .replace(/&lt;/g, '>')
+          .replace(/&amp;/g, '&')
         const slackClient = services.slack
         const reply = await handleTextMessage(context, text)
         await slackClient.pushMessage({
-          text: `\`\`\`${JSON.stringify(reply, null, 2)}\`\`\``
+          text: `\`\`\`${JSON.stringify(reply, null, 2)}\`\`\``,
         })
       }
     }
@@ -135,7 +138,10 @@ app.post(
       toMessages('received: ' + text + ` [from ${req.body.source}]`)
     )
     const reply = await handleTextMessage(context, text)
-    await lineClient.pushMessage(context.secrets.LINE_USER_ID, toMessages(reply))
+    await lineClient.pushMessage(
+      context.secrets.LINE_USER_ID,
+      toMessages(reply)
+    )
     return reply
   })
 )
@@ -158,7 +164,7 @@ app.get(
       .select({ filterByFormula: 'NOT(Completed)' })
       .all()
     const jobsToRun = pendingJobs.filter(
-      j => new Date().toJSON() >= j.get('Scheduled time')
+      (j) => new Date().toJSON() >= j.get('Scheduled time')
     )
     try {
       for (const job of jobsToRun) {
@@ -187,7 +193,7 @@ function requireApiKey(req: Request, res: Response, next: NextFunction) {
 }
 
 class Slack {
-  constructor(private webhookUrl: string) { }
+  constructor(private webhookUrl: string) {}
   async pushMessage(message: SlackMessage) {
     await require('axios').post(this.webhookUrl, message)
   }
@@ -206,7 +212,10 @@ function endpoint(
     const lineClient = new Client(lineConfig)
     const slackClient = new Slack(context.secrets.SLACK_WEBHOOK_URL)
     try {
-      const result = await f(context, req, { line: lineClient, slack: slackClient })
+      const result = await f(context, req, {
+        line: lineClient,
+        slack: slackClient,
+      })
       res.json({ ok: true, result })
     } catch (e) {
       console.error('An error has been caught in the endpoint...')
@@ -234,7 +243,7 @@ function getLineConfig(req: Request) {
   const context = getAutomatronContext(req)
   return {
     channelAccessToken: context.secrets.LINE_CHANNEL_ACCESS_TOKEN,
-    channelSecret: context.secrets.LINE_CHANNEL_SECRET
+    channelSecret: context.secrets.LINE_CHANNEL_SECRET,
   }
 }
 

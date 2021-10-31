@@ -1,5 +1,5 @@
 {
-  "name": "@dtinth/automatron",
+  "name": "@dtinth/automatron-core",
   "private": true,
   "description": "My LINE bot!",
   "version": "1.0.0",

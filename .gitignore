@@ -7,3 +7,12 @@ node_modules
 *.gz
 webpack.stats.json
 *.env
+
+# Rush temporary files
+common/deploy/
+common/temp/
+common/autoinstallers/*/.npmrc
+**/.rush/temp/
+
+# Heft
+.heft

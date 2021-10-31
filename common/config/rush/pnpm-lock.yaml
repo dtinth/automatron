@@ -40,7 +40,7 @@ specifiers:
   twindtinth: ^0.1.0
   verror: ^1.10.0
   vite: ^2.5.4
-  vite-plugin-pwa: ^0.11.2
+  vite-plugin-pwa: ^0.11.3
   yargs: ^13.2.2
 
 dependencies:
@@ -6918,7 +6918,7 @@ packages:
     dev: false
 
   file:projects/automatron-web.tgz:
-    resolution: {integrity: sha512-EtXwuTBJQY2T50dWbIu/B+wN2pt1q17boNHPH9R4bqOFYLvEuY/NZmcrMwuzsqrOFrrSeuDA/gYmSn/Fjq8XVQ==, tarball: file:projects/automatron-web.tgz}
+    resolution: {integrity: sha512-Cbi1ffPuHF5i3oJN4TYiGbe8dIdk8qIhIQrQWAIUW0g4VNH3PiH5IWEuY74zsUvE77xVSBV1d0+QqOnU2b/8kA==, tarball: file:projects/automatron-web.tgz}
     name: '@rush-temp/automatron-web'
     version: 0.0.0
     dependencies:

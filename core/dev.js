@@ -64,6 +64,29 @@ require('yargs')
       .file('evalaas/automatron.env')
       .download({ destination: 'automatron.env' })
   })
+  .command(
+    'set-up-codespaces',
+    'Downloads Google Cloud service account file for usage in GitHub Codespaces',
+    {},
+    async () => {
+      const encrypted = require('@dtinth/encrypted')(
+        process.env.SERVICE_ACCOUNT_ENCRYPTION_KEY
+      )
+      const encryptedServiceAccount = require('child_process')
+        .execSync('curl $SERVICE_ACCOUNT_URL')
+        .toString()
+        .trim()
+      const decryptedServiceAccount = encrypted(encryptedServiceAccount)
+
+      const serviceAccountPath =
+        process.env.HOME + '/.google-cloud-service-account.json'
+      fs.writeFileSync(
+        serviceAccountPath,
+        JSON.stringify(decryptedServiceAccount, null, 2)
+      )
+      console.log('Written service account file to', serviceAccountPath)
+    }
+  )
   .strict()
   .help()
   .parse()

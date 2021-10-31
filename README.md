@@ -65,3 +65,14 @@ automatron can also convert image to text using [Google Cloud Vision API](https:
 `POST /text` sends a text command to automatron. This is equivalent to sending a text message through LINE. This allows me to create a CLI tool that lets me talk to automatron from my terminal.
 
 `POST /post` sends a message to my LINE account directly. This allows the [home automation](#home-automation) scripts to report back to me whenever the script is invoked.
+
+## project structure
+
+This project is a monorepo managed by [Rush](https://rushjs.io/). It contains multiple subprojects:
+
+- [core](./core) — The core automatron service running on Google Cloud Run.
+- [webui](./webui) — The web-based UI running on Vercel.
+
+### other projects
+
+- [automatron-prelude](https://github.dev/dtinth/automatron-prelude/blob/main/prelude.js) contains code experimentation.

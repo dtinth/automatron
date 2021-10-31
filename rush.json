@@ -385,6 +385,10 @@
     {
       "packageName": "@dtinth/automatron-core",
       "projectFolder": "core"
+    },
+    {
+      "packageName": "@dtinth/automatron-web",
+      "projectFolder": "webui"
     }
     // {
     //   /**

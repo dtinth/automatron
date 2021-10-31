@@ -26,6 +26,8 @@
     "cors": "^2.8.5",
     "google-auth-library": "^7.9.2",
     "twind": "^0.16.16",
-    "twindtinth": "^0.1.0"
+    "twindtinth": "^0.1.0",
+    "workbox-build": "^6.3.0",
+    "workbox-window": "^6.3.0"
   }
 }

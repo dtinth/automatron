@@ -65,27 +65,3 @@ automatron can also convert image to text using [Google Cloud Vision API](https:
 `POST /text` sends a text command to automatron. This is equivalent to sending a text message through LINE. This allows me to create a CLI tool that lets me talk to automatron from my terminal.
 
 `POST /post` sends a message to my LINE account directly. This allows the [home automation](#home-automation) scripts to report back to me whenever the script is invoked.
-
-## secrets
-
-The secret data required to run the automation are defined in [BotSecrets.ts](./src/BotSecrets.ts).
-
-## development workflow
-
-### developing
-
-Watches for file changes and deploy the compiled code. Since it is my personal bot (I am the only one using it), I want a save-and-deploy workflow; there is no dev/staging environment at all.
-
-```sh
-node dev
-```
-
-### configuration
-
-```sh
-# download
-gsutil cp gs://$GOOGLE_CLOUD_PROJECT-evalaas/evalaas/automatron.env automatron.env
-
-# upload
-gsutil cp automatron.env gs://$GOOGLE_CLOUD_PROJECT-evalaas/evalaas/automatron.env
-```

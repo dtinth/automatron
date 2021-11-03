@@ -1,10 +1,5 @@
+import { getCodeExecutionContext } from './PreludeCode'
 import { AutomatronContext } from './types'
-import tweetnacl from 'tweetnacl'
-import jsonwebtoken from 'jsonwebtoken'
-import axios from 'axios'
-import crypto from 'crypto'
-import util from 'util'
-import Encrypted from '@dtinth/encrypted'
 
 export async function evaluateCode(input: string, context: AutomatronContext) {
   const code = input.startsWith(';')
@@ -25,48 +20,7 @@ export async function evaluateCode(input: string, context: AutomatronContext) {
   const prevStateSnapshot = '{}'
   const prevState = JSON.parse(prevStateSnapshot)
 
-  // Prepare "self" context
-  const self: any = {}
-  self.encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
-  self.extraMessages = []
-  self.require = (id: string) => {
-    const availableModules: { [id: string]: any } = {
-      axios,
-      tweetnacl,
-      jsonwebtoken,
-      crypto,
-      util,
-    }
-    const available = {}.hasOwnProperty.call(availableModules, id)
-    if (!available) {
-      throw new Error(
-        `Module ${id} not available; available modules: ${Object.keys(
-          availableModules
-        )}`
-      )
-    }
-    return availableModules[id]
-  }
-
-  // Execute user prelude
-  const userPreludeResponse = await axios.get(
-    'https://api.github.com/repos/dtinth/automatron-prelude/contents/prelude.js',
-    {
-      auth: {
-        username: context.secrets.GITHUB_OAUTH_APP_CREDENTIALS.split(':')[0],
-        password: context.secrets.GITHUB_OAUTH_APP_CREDENTIALS.split(':')[1],
-      },
-    }
-  )
-  const userPrelude = Buffer.from(
-    userPreludeResponse.data.content,
-    'base64'
-  ).toString()
-  new Function(...['self', 'code'], 'with (self) { return eval(code) }')(
-    self,
-    userPrelude
-  )
-
+  const self = await getCodeExecutionContext(context)
   const [value, nextState] = runner(
     require('prelude-ls'),
     self,

@@ -20,7 +20,11 @@ require('yargs')
     async (args) => {
       ora.info('Running bundler.')
       const ncc = require('@zeit/ncc')('./src/bot.ts', {
-        externals: ['@google-cloud/vision', '@google-cloud/iot'],
+        externals: [
+          '@google-cloud/vision',
+          '@google-cloud/iot',
+          '@google-cloud/storage',
+        ],
         sourceMap: true,
         sourceMapRegister: false,
         watch: true,

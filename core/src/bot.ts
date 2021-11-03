@@ -16,6 +16,7 @@ import pino from 'pino'
 import axios from 'axios'
 import Encrypted from '@dtinth/encrypted'
 import sealedbox from 'tweetnacl-sealedbox-js'
+import { deployPrelude } from './PreludeCode'
 
 const app = express()
 const logger = pino({
@@ -181,6 +182,19 @@ app.post(
       toMessages(reply)
     )
     return reply
+  })
+)
+
+app.post(
+  '/gh/prelude/push',
+  require('body-parser').json(),
+  endpoint(async (context, req, services) => {
+    logger.info(
+      { event: JSON.stringify(req.body) },
+      'Received prelude push webhook from GitHub'
+    )
+    await deployPrelude(context)
+    return 'ok'
   })
 )
 

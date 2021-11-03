@@ -49,6 +49,12 @@ export async function handleTextMessage(
     const prelude = await getCodeExecutionContext(context)
     await prelude.executeHandlers('bedtime')
     return 'ok, good night'
+  } else if (message === 'ooo') {
+    const prelude = await getCodeExecutionContext(context)
+    await prelude.executeHandlers('ooo')
+  } else if (message === 'work') {
+    const prelude = await getCodeExecutionContext(context)
+    await prelude.executeHandlers('work')
   } else if ((match = message.match(/^lights (\w+)$/))) {
     const cmd = match[1]
     await sendHomeCommand(context, 'lights ' + cmd)

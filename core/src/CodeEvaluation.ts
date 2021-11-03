@@ -7,13 +7,15 @@ import util from 'util'
 import Encrypted from '@dtinth/encrypted'
 
 export async function evaluateCode(input: string, context: AutomatronContext) {
-  const code = require('livescript')
-    .compile(input, {
-      run: true,
-      print: true,
-      header: false,
-    })
-    .replace(/^\(function/, '(async function')
+  const code = input.startsWith(';')
+    ? input
+    : require('livescript')
+        .compile(input, {
+          run: true,
+          print: true,
+          header: false,
+        })
+        .replace(/^\(function/, '(async function')
   console.log('Code compilation result', code)
   const runner = new Function(
     ...['prelude', 'self', 'code', 'context', 'state'],

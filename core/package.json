@@ -30,10 +30,12 @@
     "jsonwebtoken": "^8.5.1",
     "livescript": "1.6.0",
     "lodash": "^4.17.11",
+    "pino": "^7.0.5",
     "mqtt": "2.18.8",
     "prelude-ls": "1.1.2",
     "transaction-parser-th": "0.1.1",
     "tweetnacl": "^1.0.3",
+    "tweetnacl-sealedbox-js": "^1.2.0",
     "verror": "^1.10.0"
   },
   "devDependencies": {

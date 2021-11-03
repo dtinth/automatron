@@ -12,8 +12,39 @@ import { toMessages } from './LINEMessageUtilities'
 import { createErrorMessage, SlackMessage } from './SlackMessageUtilities'
 import { getCronTable } from './Cron'
 import { handleTextMessage, handleImage } from './MessageHandler'
+import pino from 'pino'
+import axios from 'axios'
+import Encrypted from '@dtinth/encrypted'
+import sealedbox from 'tweetnacl-sealedbox-js'
 
 const app = express()
+const logger = pino({
+  // https://github.com/pinojs/pino/issues/726#issuecomment-605814879
+  messageKey: 'message',
+  formatters: {
+    level: (label) => {
+      function getSeverity(label: string) {
+        switch (label) {
+          case 'trace':
+            return 'DEBUG'
+          case 'debug':
+            return 'DEBUG'
+          case 'info':
+            return 'INFO'
+          case 'warn':
+            return 'WARNING'
+          case 'error':
+            return 'ERROR'
+          case 'fatal':
+            return 'CRITICAL'
+          default:
+            return 'DEFAULT'
+        }
+      }
+      return { severity: getSeverity(label) }
+    },
+  },
+}).child({ name: 'automatron' })
 
 function getAutomatronContext(req: Request): AutomatronContext {
   return { secrets: req.env }
@@ -34,7 +65,10 @@ async function handleWebhook(
 
   async function handleMessageEvent(event: MessageEvent) {
     const { replyToken, message } = event
-    console.log(event)
+    logger.info(
+      { event: JSON.stringify(event) },
+      'Received a message event from LINE'
+    )
     if (event.source.userId !== context.secrets.LINE_USER_ID) {
       await client.replyMessage(replyToken, toMessages('unauthorized'))
       return
@@ -80,6 +114,10 @@ app.post(
   '/slack',
   require('body-parser').json(),
   (req, res, next) => {
+    logger.info(
+      { event: JSON.stringify(req.body) },
+      'Received an event from Slack'
+    )
     if (req.body.type === 'url_verification') {
       res.set('Content-Type', 'text/plain').send(req.body.challenge)
       return
@@ -156,6 +194,37 @@ app.post(
   })
 )
 
+app.post(
+  '/notification',
+  require('body-parser').text(),
+  endpoint(async (context, req, services) => {
+    try {
+      const encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
+      const { publicKey, secretKey, forwardingTarget } = encrypted(`
+        BpnjVPJcwkInfE/lPxxcl6E11BlDNh3v.KoCet77F7KC4pvuhRySH2wNP1AjYpUGVcHQSqhc
+        rbFTDHUsXDaYjF/Jc584uh7Bd6yLl0a4scdEsX7EhxuHXUknD4bA8AXxkJe/OhI3EbmfleP5
+        ByVNvvvxqScM9pHvCy/bURK33REznhvW0MsscwgRGsqMxvI7Km9RpxpglexWANMlrkuVBJbC
+        G3CeOqs9QGI3QS0K+jse8PM7HvJ8vg43AAjQsx6o85xSzaGWVWE1wdNtWfkdusGf/NYbDyb6
+        hgA9ddrCRJVMydqJ4g9A/LgpieO0v
+      `)
+      const result = sealedbox.open(
+        Buffer.from(req.body, 'hex'),
+        Buffer.from(publicKey, 'base64'),
+        Buffer.from(secretKey, 'base64')
+      )
+      const notification = JSON.parse(Buffer.from(result).toString('utf8'))
+      logger.info({ notification }, 'Received a notification')
+      await axios.post(forwardingTarget, req.body, {
+        headers: {
+          'Content-Type': 'text/plain',
+        },
+      })
+    } catch (err) {
+      logger.error({ err, data: req.body }, 'Unable to process notification')
+    }
+  })
+)
+
 app.get(
   '/cron',
   endpoint(async (context, req, services) => {
@@ -166,19 +235,29 @@ app.get(
     const jobsToRun = pendingJobs.filter(
       (j) => new Date().toJSON() >= j.get('Scheduled time')
     )
+    logger.trace('Number of pending cron jobs found: %s', jobsToRun.length)
     try {
       for (const job of jobsToRun) {
         let result = 'No output'
+        const logContext = {
+          job: { id: job.getId(), name: job.get('Name') },
+        }
         try {
           const reply = await handleTextMessage(context, job.get('Name'))
           result = require('util').inspect(reply)
+          logger.info(
+            { ...logContext, result },
+            `Done processing cron job: ${job.get('Name')}`
+          )
         } catch (e) {
+          logError('Unable to process cron job', e, logContext)
           result = `Error: ${e}`
         }
         await table.update(job.getId(), { Completed: true, Notes: result })
       }
       return 'All OK'
     } catch (e) {
+      logError('Unable to process cron jobs', e)
       return 'Error: ' + e
     }
   })
@@ -195,7 +274,7 @@ function requireApiKey(req: Request, res: Response, next: NextFunction) {
 class Slack {
   constructor(private webhookUrl: string) {}
   async pushMessage(message: SlackMessage) {
-    await require('axios').post(this.webhookUrl, message)
+    await axios.post(this.webhookUrl, message)
   }
 }
 
@@ -218,25 +297,26 @@ function endpoint(
       })
       res.json({ ok: true, result })
     } catch (e) {
-      console.error('An error has been caught in the endpoint...')
-      logError(e)
+      logError('Unable to execute endpoint', e)
       try {
-        await slackClient.pushMessage(createErrorMessage(e))
+        await slackClient.pushMessage(createErrorMessage(e as any))
       } catch (ee) {
         console.error('Cannot send error message to LINE!')
-        logError(ee)
+        logError('Unable to send error message to Slack', ee)
       }
       return next(e)
     }
   }
 }
 
-function logError(e: any) {
+function logError(title: string, e: any, extra: Record<string, any> = {}) {
   var response = e.response || (e.originalError && e.originalError.response)
   var data = response && response.data
+  const bindings: Record<string, any> = { ...extra, err: e }
   if (data) {
-    console.error('HTTP error data', data)
+    bindings.responseData = JSON.stringify(data)
   }
+  logger.error(bindings, `${title}: ${e}`)
 }
 
 function getLineConfig(req: Request) {

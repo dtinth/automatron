@@ -29,6 +29,7 @@ specifiers:
   lodash: ^4.17.11
   mqtt: 2.18.8
   ora: ^3.2.0
+  pino: ^7.0.5
   prelude-ls: 1.1.2
   svelte: ^3.37.0
   svelte-check: ^2.1.0
@@ -36,6 +37,7 @@ specifiers:
   transaction-parser-th: 0.1.1
   tslib: ^2.2.0
   tweetnacl: ^1.0.3
+  tweetnacl-sealedbox-js: ^1.2.0
   twind: ^0.16.16
   twindtinth: ^0.1.0
   verror: ^1.10.0
@@ -74,6 +76,7 @@ dependencies:
   lodash: 4.17.21
   mqtt: 2.18.8
   ora: 3.4.0
+  pino: 7.0.5
   prelude-ls: 1.1.2
   svelte: 3.44.0
   svelte-check: 2.2.8_svelte@3.44.0
@@ -81,6 +84,7 @@ dependencies:
   transaction-parser-th: 0.1.1
   tslib: 2.3.1
   tweetnacl: 1.0.3
+  tweetnacl-sealedbox-js: 1.2.0
   twind: 0.16.16
   twindtinth: 0.1.0
   verror: 1.10.0
@@ -1963,6 +1967,11 @@ packages:
     hasBin: true
     dev: false
 
+  /atomic-sleep/1.0.0:
+    resolution: {integrity: sha512-kNOjDqAh7px0XWNI+4QbzoiR/nTkHAWNud2uvnJquD1/x5a7EQZMJT0AczqK0Qn67oY/TTQ1LbUKajZpp3I9tQ==}
+    engines: {node: '>=8.0.0'}
+    dev: false
+
   /aws-sign2/0.7.0:
     resolution: {integrity: sha1-tG6JCTSpWR8tL2+G1+ap8bP+dqg=}
     dev: false
@@ -2072,6 +2081,10 @@ packages:
     dependencies:
       readable-stream: 2.3.7
       safe-buffer: 5.2.1
+    dev: false
+
+  /blakejs/1.1.1:
+    resolution: {integrity: sha512-bLG6PHOCZJKNshTjGRBvET0vTciwQE6zFKOKKXPDJfwFBd4Ac0yBfPZqcGvGJap50l7ktvlpFqc2jGVaUgbJgg==}
     dev: false
 
   /body-parser/1.18.3:
@@ -3230,8 +3243,17 @@ packages:
     resolution: {integrity: sha1-PYpcZog6FqMMqGQ+hR8Zuqd5eRc=}
     dev: false
 
+  /fast-redact/3.0.2:
+    resolution: {integrity: sha512-YN+CYfCVRVMUZOUPeinHNKgytM1wPI/C/UCLEi56EsY2dwwvI00kIJHJoI7pMVqGoMew8SMZ2SSfHKHULHXDsg==}
+    engines: {node: '>=6'}
+    dev: false
+
   /fast-text-encoding/1.0.3:
     resolution: {integrity: sha512-dtm4QZH9nZtcDt8qJiOH9fcQd1NAgi+K1O2DbE6GG1PPCK/BWfOH3idCTRQ4ImXRUOyopDEgDEnVEE7Y/2Wrig==}
+    dev: false
+
+  /fastify-warning/0.2.0:
+    resolution: {integrity: sha512-s1EQguBw/9qtc1p/WTY4eq9WMRIACkj+HTcOIK1in4MV5aFaQC9ZCIt0dJ7pr5bIf4lPpHvAtP2ywpTNgs7hqw==}
     dev: false
 
   /fastq/1.13.0:
@@ -4873,6 +4895,10 @@ packages:
       isobject: 3.0.1
     dev: false
 
+  /on-exit-leak-free/0.2.0:
+    resolution: {integrity: sha512-dqaz3u44QbRXQooZLTUKU41ZrzYrcvLISVgbrzbyCMxpmSLJvZ3ZamIJIZ29P6OhZIkNIQKosdeM6t1LYbA9hg==}
+    dev: false
+
   /on-finished/2.3.0:
     resolution: {integrity: sha1-IPEzZIGwg811M3mSoWlxqi2QaUc=}
     engines: {node: '>= 0.8'}
@@ -5073,6 +5099,33 @@ packages:
   /pify/4.0.1:
     resolution: {integrity: sha512-uB80kBFb/tfd68bVleG9T5GGsGPjJrLAUpR5PZIrhBnIaRTQRjqdJSsIKkOP6OAIFbj7GOrcudc5pNjZ+geV2g==}
     engines: {node: '>=6'}
+    dev: false
+
+  /pino-abstract-transport/0.4.0:
+    resolution: {integrity: sha512-Znl3f1ntZnDG+NpCyJyJDS+lkrlRSbgQBkV3eqNAvet/QHql6rhKLc4DuYRlwfc3fvV611O9NXPm5pbT9AJ50g==}
+    dependencies:
+      duplexify: 4.1.2
+      split2: 3.2.2
+    dev: false
+
+  /pino-std-serializers/4.0.0:
+    resolution: {integrity: sha512-cK0pekc1Kjy5w9V2/n+8MkZwusa6EyyxfeQCB799CQRhRt/CqYKiWs5adeu8Shve2ZNffvfC/7J64A2PJo1W/Q==}
+    dev: false
+
+  /pino/7.0.5:
+    resolution: {integrity: sha512-ePain4FiooTqiqg0eLQ/KBfRepKPZBggmF1caUrLX+Ku1erPAiIZL3p2lycM3UhorVYbFt4CuDFAHP/d80hCzg==}
+    hasBin: true
+    dependencies:
+      fast-redact: 3.0.2
+      fastify-warning: 0.2.0
+      get-caller-file: 2.0.5
+      json-stringify-safe: 5.0.1
+      on-exit-leak-free: 0.2.0
+      pino-abstract-transport: 0.4.0
+      pino-std-serializers: 4.0.0
+      quick-format-unescaped: 4.0.4
+      sonic-boom: 2.3.1
+      thread-stream: 0.11.2
     dev: false
 
   /posix-character-classes/0.1.1:
@@ -5286,6 +5339,10 @@ packages:
 
   /queue-microtask/1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
+    dev: false
+
+  /quick-format-unescaped/4.0.4:
+    resolution: {integrity: sha512-tYC1Q1hgyRuHgloV/YXs2w15unPVh8qfu/qCTfhTYamaw7fyhumKa2yGpdSo87vY32rIclj+4fWYQXUMs9EHvg==}
     dev: false
 
   /randombytes/2.1.0:
@@ -5732,6 +5789,12 @@ packages:
       use: 3.1.1
     dev: false
 
+  /sonic-boom/2.3.1:
+    resolution: {integrity: sha512-o0vJPsRiCW5Q0EmRKjNiiYGy2DqSXcxk4mY9vIBSPwmkH/e/vJ2Tq8EECd5NTiO77x8vlVN+ykDjRQJTqf7eKg==}
+    dependencies:
+      atomic-sleep: 1.0.0
+    dev: false
+
   /sorcery/0.10.0:
     resolution: {integrity: sha1-iukK19fLBfxZ8asMY3hF1cFaUrc=}
     hasBin: true
@@ -5818,6 +5881,12 @@ packages:
     resolution: {integrity: sha512-RAb22TG39LhI31MbreBgIuKiIKhVsawfTgEGqKHTK87aG+ul/PB8Sqoi3I7kVdRWiCfrKxK3uo4/YUkpNvhPbw==}
     dependencies:
       through2: 2.0.5
+    dev: false
+
+  /split2/3.2.2:
+    resolution: {integrity: sha512-9NThjpgZnifTkJpzTZ7Eue85S49QwpNhZTq6GRJwObb6jnLFNGB7Qm73V5HewTROPyxD0C29xqmaI68bQtV+hg==}
+    dependencies:
+      readable-stream: 3.6.0
     dev: false
 
   /sshpk/1.16.1:
@@ -6191,6 +6260,10 @@ packages:
       source-map-support: 0.5.20
     dev: false
 
+  /thread-stream/0.11.2:
+    resolution: {integrity: sha512-C/Yl5e5+UF3Rn2Fo8DzNb4jeM1/YnhIgfx9bFDNbFSnWZHPDJquZr6cM3DG33+8lcUrw7tmEv/ziZAc9urFSww==}
+    dev: false
+
   /through2-filter/3.0.0:
     resolution: {integrity: sha512-jaRjI2WxN3W1V8/FMZ9HKIBXixtiqs3SQSX4/YGIiP3gL6djW48VoZq9tDqeCWs3MT8YY5wb/zli8VW8snY1CA==}
     dependencies:
@@ -6321,6 +6394,13 @@ packages:
     resolution: {integrity: sha1-J6XeoGs2sEoKmWZ3SykIaPD8QP0=}
     dependencies:
       safe-buffer: 5.2.1
+    dev: false
+
+  /tweetnacl-sealedbox-js/1.2.0:
+    resolution: {integrity: sha512-QoCr8K2hwri+ky7SUa22oSre8g88XaWi0hwwWd16pJMuDyn5gL/UyE0PyR2EOFEMJ70T2trJ9+Sv+Qa18olEmQ==}
+    dependencies:
+      blakejs: 1.1.1
+      tweetnacl: 1.0.3
     dev: false
 
   /tweetnacl/0.14.5:
@@ -6988,7 +7068,7 @@ packages:
     dev: false
 
   file:projects/automatron-core.tgz:
-    resolution: {integrity: sha512-A53VI7qsJutfETeQwzLOmRtP0HNGc9Jst+KvNeKinZh9d4zEvrtbONxMLM9usDXXMn0ufG1YRlZ+KvyMVbp2JA==, tarball: file:projects/automatron-core.tgz}
+    resolution: {integrity: sha512-7oMw8AiChcSADocRtGHjhl1v4mBiqZvoV+DIdMI3/rzKKFCKradcDniKATwhHkHXDzWzEWFL6WMVOKq0cD75TQ==, tarball: file:projects/automatron-core.tgz}
     name: '@rush-temp/automatron-core'
     version: 0.0.0
     dependencies:
@@ -7013,9 +7093,11 @@ packages:
       lodash: 4.17.21
       mqtt: 2.18.8
       ora: 3.4.0
+      pino: 7.0.5
       prelude-ls: 1.1.2
       transaction-parser-th: 0.1.1
       tweetnacl: 1.0.3
+      tweetnacl-sealedbox-js: 1.2.0
       typescript: 3.9.10
       verror: 1.10.0
       yargs: 13.3.2

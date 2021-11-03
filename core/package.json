@@ -20,7 +20,7 @@
     "@google-cloud/iot": "^2.1.1",
     "@google-cloud/storage": "^2.4.2",
     "@google-cloud/vision": "0.22.1",
-    "@line/bot-sdk": "6.3.0",
+    "@line/bot-sdk": "^7.4.0",
     "@slack/types": "^1.5.0",
     "airtable": "0.5.9",
     "axios": "0.18.0",

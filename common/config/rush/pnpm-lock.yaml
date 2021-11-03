@@ -6,7 +6,7 @@ specifiers:
   '@google-cloud/iot': ^2.1.1
   '@google-cloud/storage': ^2.4.2
   '@google-cloud/vision': 0.22.1
-  '@line/bot-sdk': 6.3.0
+  '@line/bot-sdk': ^7.4.0
   '@rush-temp/automatron-core': file:./projects/automatron-core.tgz
   '@rush-temp/automatron-web': file:./projects/automatron-web.tgz
   '@slack/types': ^1.5.0
@@ -51,7 +51,7 @@ dependencies:
   '@google-cloud/iot': 2.5.1
   '@google-cloud/storage': 2.5.0
   '@google-cloud/vision': 0.22.1
-  '@line/bot-sdk': 6.3.0
+  '@line/bot-sdk': 7.4.0
   '@rush-temp/automatron-core': file:projects/automatron-core.tgz
   '@rush-temp/automatron-web': file:projects/automatron-web.tgz
   '@slack/types': 1.10.0
@@ -1364,17 +1364,16 @@ packages:
       yargs: 16.2.0
     dev: false
 
-  /@line/bot-sdk/6.3.0:
-    resolution: {integrity: sha512-MEC6hrTGWgh50RjP9RfKtNUTzz5EVJRIyo0JQi1wD4ZPQJ6A9qFeZf8HmTON3/2FQ2yzkmZAryi6mUqMvebvSA==}
-    engines: {node: '>=6'}
-    deprecated: Some API domains has been changed. Old domains can't be used from April 30, 2020. Please refer https://developers.line.biz/en/news/2019/11/#notice-of-domain-name-change-for-certain-endpoints-2019-11-08 for details.
+  /@line/bot-sdk/7.4.0:
+    resolution: {integrity: sha512-MNnE9Ew/NRhZIvSchWRaStJGVDcPIGhG7tiZ5Oz3DO+KOgbUffS1Pn+j4aatcBcULLysv0fgp2anIllc+N+hmA==}
+    engines: {node: '>=10'}
     dependencies:
       '@types/body-parser': 1.19.1
-      '@types/file-type': 5.2.2
-      '@types/node': 7.10.14
-      axios: 0.16.2
-      body-parser: 1.18.3
-      file-type: 7.7.1
+      '@types/node': 14.17.32
+      axios: 0.21.4
+      body-parser: 1.19.0
+      file-type: 15.0.1
+      form-data: 3.0.1
     transitivePeerDependencies:
       - debug
     dev: false
@@ -1570,6 +1569,14 @@ packages:
       - supports-color
     dev: false
 
+  /@tokenizer/token/0.1.1:
+    resolution: {integrity: sha512-XO6INPbZCxdprl+9qa/AAbFFOMzzwqYxpjPgLICrMD6C2FCw6qfJOPcBk6JqqPLSaZ/Qx87qn4rpPmPMwaAK6w==}
+    dev: false
+
+  /@tokenizer/token/0.3.0:
+    resolution: {integrity: sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A==}
+    dev: false
+
   /@tsconfig/svelte/2.0.1:
     resolution: {integrity: sha512-aqkICXbM1oX5FfgZd2qSSAGdyo/NRxjWCamxoyi3T8iVQnzGge19HhDYzZ6NrVOW7bhcWNSq9XexWFtMzbB24A==}
     dev: false
@@ -1578,7 +1585,7 @@ packages:
     resolution: {integrity: sha512-a6bTJ21vFOGIkwM0kzh9Yr89ziVxq4vYH2fQ6N8AeipEzai/cFK6aGMArIkUeIdRIgpwQa+2bXiLuUJCpSf2Cg==}
     dependencies:
       '@types/connect': 3.4.35
-      '@types/node': 13.13.52
+      '@types/node': 14.17.32
     dev: false
 
   /@types/bytebuffer/5.0.42:
@@ -1595,7 +1602,7 @@ packages:
   /@types/connect/3.4.35:
     resolution: {integrity: sha512-cdeYyv4KWoEgpBISTxWvqYsVy444DOqehiF3fM3ne10AmJ62RSyNkUnxMJXHQWRQQX2eR94m5y1IZyDwBjV9FQ==}
     dependencies:
-      '@types/node': 13.13.52
+      '@types/node': 14.17.32
     dev: false
 
   /@types/estree/0.0.39:
@@ -1617,12 +1624,6 @@ packages:
       '@types/express-serve-static-core': 4.17.24
       '@types/qs': 6.9.7
       '@types/serve-static': 1.13.10
-    dev: false
-
-  /@types/file-type/5.2.2:
-    resolution: {integrity: sha512-GWtM4fyqfb+bec4ocpo51/y4x0b83Je+iA6eV131LT9wL0//G+1UgwbkMg7w61ceOwR+KkZXK00z44jrrNljWg==}
-    dependencies:
-      '@types/node': 13.13.52
     dev: false
 
   /@types/gapi.auth2/0.0.55:
@@ -1657,8 +1658,8 @@ packages:
     resolution: {integrity: sha512-s3nugnZumCC//n4moGGe6tkNMyYEdaDBitVjwPxXmR5lnMG5dHePinH2EdxkG3Rh1ghFHHixAG4NJhpJW1rthQ==}
     dev: false
 
-  /@types/node/7.10.14:
-    resolution: {integrity: sha512-29GS75BE8asnTno3yB6ubOJOO0FboExEqNJy4bpz0GSmW/8wPTNL4h9h63c6s1uTrOopCmJYe/4yJLh5r92ZUA==}
+  /@types/node/14.17.32:
+    resolution: {integrity: sha512-JcII3D5/OapPGx+eJ+Ik1SQGyt6WvuqdRfh9jUwL6/iHGjmyOriBDciBUu7lEIBTL2ijxwrR70WUnw5AEDmFvQ==}
     dev: false
 
   /@types/node/9.6.61:
@@ -1970,16 +1971,6 @@ packages:
     resolution: {integrity: sha512-xh1Rl34h6Fi1DC2WWKfxUTVqRsNnr6LsKz2+hfwDxQJWmrx8+c7ylaqBMcHfl1U1r2dsifOvKX3LQuLNZ+XSvA==}
     dev: false
 
-  /axios/0.16.2:
-    resolution: {integrity: sha1-uk+S8XFn37q0CYN4VFS5rBScPG0=}
-    deprecated: Critical security vulnerability fixed in v0.21.1. For more information, see https://github.com/axios/axios/pull/3410
-    dependencies:
-      follow-redirects: 1.14.5
-      is-buffer: 1.1.6
-    transitivePeerDependencies:
-      - debug
-    dev: false
-
   /axios/0.18.0:
     resolution: {integrity: sha1-MtU+SFHv3AoRmTts0AB4nXDAUQI=}
     deprecated: Critical security vulnerability fixed in v0.21.1. For more information, see https://github.com/axios/axios/pull/3410
@@ -2099,6 +2090,22 @@ packages:
       type-is: 1.6.18
     dev: false
 
+  /body-parser/1.19.0:
+    resolution: {integrity: sha512-dhEPs72UPbDnAQJ9ZKMNTP6ptJaionhP5cBb541nXPlW60Jepo9RV/a4fX4XWW9CuFNK22krhrj1+rgzifNCsw==}
+    engines: {node: '>= 0.8'}
+    dependencies:
+      bytes: 3.1.0
+      content-type: 1.0.4
+      debug: 2.6.9
+      depd: 1.1.2
+      http-errors: 1.7.2
+      iconv-lite: 0.4.24
+      on-finished: 2.3.0
+      qs: 6.7.0
+      raw-body: 2.4.0
+      type-is: 1.6.18
+    dev: false
+
   /brace-expansion/1.1.11:
     resolution: {integrity: sha512-iCuPHDFgrHX7H2vEI/5xpz07zSHB00TpugqhmYtVmMO6518mCuRMoOYFldEBl0g187ufozdaHgWKcYFb61qGiA==}
     dependencies:
@@ -2167,6 +2174,11 @@ packages:
 
   /bytes/3.0.0:
     resolution: {integrity: sha1-0ygVQE1olpn4Wk6k+odV3ROpYEg=}
+    engines: {node: '>= 0.8'}
+    dev: false
+
+  /bytes/3.1.0:
+    resolution: {integrity: sha512-zauLjrfCG+xvoyaqLoV8bLVXXNGC4JqlxFCutSDWA6fJrTo2ZuvLYTqZ7aHBLZSMOopbzwv8f+wZcVzfVTI2Dg==}
     engines: {node: '>= 0.8'}
     dev: false
 
@@ -3228,9 +3240,14 @@ packages:
       reusify: 1.0.4
     dev: false
 
-  /file-type/7.7.1:
-    resolution: {integrity: sha512-bTrKkzzZI6wH+NXhyD3SOXtb2zXTw2SbwI2RxUlRcXVsnN7jNL5hJzVQLYv7FOQhxFkK4XWdAflEaWFpaLLWpQ==}
-    engines: {node: '>=4'}
+  /file-type/15.0.1:
+    resolution: {integrity: sha512-0LieQlSA3bWUdErNrxzxfI4rhsvNAVPBO06R8pTc1hp9SE6nhqlVyvhcaXoMmtXkBTPnQenbMPLW9X76hH76oQ==}
+    engines: {node: '>=8'}
+    dependencies:
+      readable-web-to-node-stream: 2.0.0
+      strtok3: 6.2.4
+      token-types: 2.1.1
+      typedarray-to-buffer: 3.1.5
     dev: false
 
   /fill-range/4.0.0:
@@ -3301,6 +3318,15 @@ packages:
   /form-data/2.5.1:
     resolution: {integrity: sha512-m21N3WOmEEURgk6B9GLOE4RuWOFf28Lhh9qGYeNlGq4VDXUlJy2th2slBNU8Gp8EzloYZOibZJ7t5ecIrFSjVA==}
     engines: {node: '>= 0.12'}
+    dependencies:
+      asynckit: 0.4.0
+      combined-stream: 1.0.8
+      mime-types: 2.1.33
+    dev: false
+
+  /form-data/3.0.1:
+    resolution: {integrity: sha512-RHkBKtLWUVwd7SqRIvCZMEvAMoGUp0XU+seQiZejj0COz3RI3hWP4sCv3gZWWLjJTd7rGwcsF5eKZGii0r/hbg==}
+    engines: {node: '>= 6'}
     dependencies:
       asynckit: 0.4.0
       combined-stream: 1.0.8
@@ -3811,6 +3837,17 @@ packages:
       statuses: 1.5.0
     dev: false
 
+  /http-errors/1.7.2:
+    resolution: {integrity: sha512-uUQBt3H/cSIVfch6i1EuPNy/YsRSOUBXTVfZ+yR7Zjez3qjBz6i9+i4zjNaoqcoFVI4lQJ5plg63TvGfRSDCRg==}
+    engines: {node: '>= 0.6'}
+    dependencies:
+      depd: 1.1.2
+      inherits: 2.0.3
+      setprototypeof: 1.1.1
+      statuses: 1.5.0
+      toidentifier: 1.0.0
+    dev: false
+
   /http-signature/1.2.0:
     resolution: {integrity: sha1-muzZJRFHcvPZW2WmCruPfBj7rOE=}
     engines: {node: '>=0.8', npm: '>=1.3.7'}
@@ -3845,8 +3882,19 @@ packages:
       safer-buffer: 2.1.2
     dev: false
 
+  /iconv-lite/0.4.24:
+    resolution: {integrity: sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==}
+    engines: {node: '>=0.10.0'}
+    dependencies:
+      safer-buffer: 2.1.2
+    dev: false
+
   /idb/6.1.5:
     resolution: {integrity: sha512-IJtugpKkiVXQn5Y+LteyBCNk1N8xpGV3wWZk9EVtZWH8DYkjBn0bX1XnGP9RkyZF0sAcywa6unHqSWKe7q4LGw==}
+    dev: false
+
+  /ieee754/1.2.1:
+    resolution: {integrity: sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==}
     dev: false
 
   /ignore/3.3.10:
@@ -4999,6 +5047,11 @@ packages:
       pify: 3.0.0
     dev: false
 
+  /peek-readable/4.0.1:
+    resolution: {integrity: sha512-7qmhptnR0WMSpxT5rMHG9bW/mYSR1uqaPFj2MHvT+y/aOUu6msJijpKt5SkTDKySwg65OWG2JwTMBlgcbwMHrQ==}
+    engines: {node: '>=8'}
+    dev: false
+
   /performance-now/2.1.0:
     resolution: {integrity: sha1-Ywn04OX6kT7BxpMHrjZLSzd8nns=}
     dev: false
@@ -5226,6 +5279,11 @@ packages:
     engines: {node: '>=0.6'}
     dev: false
 
+  /qs/6.7.0:
+    resolution: {integrity: sha512-VCdBRNFTX1fyE7Nb6FYoURo/SPe62QCaAyzJvUjwRaIsc+NePBEniHlvxFmmX56+HZphIGtV0XeCirBtpDrTyQ==}
+    engines: {node: '>=0.6'}
+    dev: false
+
   /queue-microtask/1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
     dev: false
@@ -5251,6 +5309,16 @@ packages:
       unpipe: 1.0.0
     dev: false
 
+  /raw-body/2.4.0:
+    resolution: {integrity: sha512-4Oz8DUIwdvoa5qMJelxipzi/iJIi40O5cGV1wNYp5hvZP8ZN0T+jiNkL0QepXs+EsQ9XJ8ipEDoiH70ySUJP3Q==}
+    engines: {node: '>= 0.8'}
+    dependencies:
+      bytes: 3.1.0
+      http-errors: 1.7.2
+      iconv-lite: 0.4.24
+      unpipe: 1.0.0
+    dev: false
+
   /readable-stream/2.3.7:
     resolution: {integrity: sha512-Ebho8K4jIbHAxnuxi7o42OrZgF/ZTNcsZj6nRKyUmkhLFq8CHItp/fy6hQZuZmP/n3yZ9VBUbp4zz/mX8hmYPw==}
     dependencies:
@@ -5270,6 +5338,10 @@ packages:
       inherits: 2.0.4
       string_decoder: 1.3.0
       util-deprecate: 1.0.2
+    dev: false
+
+  /readable-web-to-node-stream/2.0.0:
+    resolution: {integrity: sha512-+oZJurc4hXpaaqsN68GoZGQAQIA3qr09Or4fqEsargABnbe5Aau8hFn6ISVleT3cpY/0n/8drn7huyyEvTbghA==}
     dev: false
 
   /readdirp/3.6.0:
@@ -5601,6 +5673,10 @@ packages:
     resolution: {integrity: sha512-BvE/TwpZX4FXExxOxZyRGQQv651MSwmWKZGqvmPcRIjDqWub67kTKuIMx43cZZrS/cBBzwBcNDWoFxt2XEFIpQ==}
     dev: false
 
+  /setprototypeof/1.1.1:
+    resolution: {integrity: sha512-JvdAWfbXeIGaZ9cILp38HntZSFSo3mWg6xGcJJsd+d4aRMOqauag1C63dJfDw7OaMYwEbHMOxEZ1lqVRYP2OAw==}
+    dev: false
+
   /shebang-command/1.2.0:
     resolution: {integrity: sha1-RKrGW2lbAzmJaMOfNj/uXer98eo=}
     engines: {node: '>=0.10.0'}
@@ -5897,6 +5973,14 @@ packages:
       min-indent: 1.0.1
     dev: false
 
+  /strtok3/6.2.4:
+    resolution: {integrity: sha512-GO8IcFF9GmFDvqduIspUBwCzCbqzegyVKIsSymcMgiZKeCfrN9SowtUoi8+b59WZMAjIzVZic/Ft97+pynR3Iw==}
+    engines: {node: '>=10'}
+    dependencies:
+      '@tokenizer/token': 0.3.0
+      peek-readable: 4.0.1
+    dev: false
+
   /stubs/3.0.0:
     resolution: {integrity: sha1-6NK6H6nJBXAwPAMLaQD31fiavls=}
     dev: false
@@ -6173,6 +6257,19 @@ packages:
       safe-regex: 1.1.0
     dev: false
 
+  /toidentifier/1.0.0:
+    resolution: {integrity: sha512-yaOH/Pk/VEhBWWTlhI+qXxDFXlejDGcQipMlyxda9nthulaxLZUNcUqFxokp0vcYnvteJln5FNQDRrxj3YcbVw==}
+    engines: {node: '>=0.6'}
+    dev: false
+
+  /token-types/2.1.1:
+    resolution: {integrity: sha512-wnQcqlreS6VjthyHO3Y/kpK/emflxDBNhlNUPfh7wE39KnuDdOituXomIbyI79vBtF0Ninpkh72mcuRHo+RG3Q==}
+    engines: {node: '>=0.1.98'}
+    dependencies:
+      '@tokenizer/token': 0.1.1
+      ieee754: 1.2.1
+    dev: false
+
   /tough-cookie/2.4.3:
     resolution: {integrity: sha512-Q5srk/4vDM54WJsJio3XNn6K2sCG+CQ8G5Wz6bZhRZoAe/+TxjWB/GlFAnYEbkYVlON9FMk/fE3h2RLpPXo4lQ==}
     engines: {node: '>=0.8'}
@@ -6297,6 +6394,12 @@ packages:
 
   /type/2.5.0:
     resolution: {integrity: sha512-180WMDQaIMm3+7hGXWf12GtdniDEy7nYcyFMKJn/eZz/6tSLXrUN9V0wKSbMjej0I1WHWbpREDEKHtqPQa9NNw==}
+    dev: false
+
+  /typedarray-to-buffer/3.1.5:
+    resolution: {integrity: sha512-zdu8XMNEDepKKR+XYOXAVPtWui0ly0NtohUscw+UmaHiAWT8hrV1rr//H6V+0DvJ3OQ19S979M0laLfX8rm82Q==}
+    dependencies:
+      is-typedarray: 1.0.0
     dev: false
 
   /typedarray/0.0.6:
@@ -6885,7 +6988,7 @@ packages:
     dev: false
 
   file:projects/automatron-core.tgz:
-    resolution: {integrity: sha512-yOYVTgRW8x/GglJ+mfltGBN5cnmGw/i0P8oSnqFwUSLMKAfosjQ4bsZN816kTWIN8dVBa9BBuK7wY3mMFLUd8A==, tarball: file:projects/automatron-core.tgz}
+    resolution: {integrity: sha512-A53VI7qsJutfETeQwzLOmRtP0HNGc9Jst+KvNeKinZh9d4zEvrtbONxMLM9usDXXMn0ufG1YRlZ+KvyMVbp2JA==, tarball: file:projects/automatron-core.tgz}
     name: '@rush-temp/automatron-core'
     version: 0.0.0
     dependencies:
@@ -6893,7 +6996,7 @@ packages:
       '@google-cloud/iot': 2.5.1
       '@google-cloud/storage': 2.5.0
       '@google-cloud/vision': 0.22.1
-      '@line/bot-sdk': 6.3.0
+      '@line/bot-sdk': 7.4.0
       '@slack/types': 1.10.0
       '@types/express': 4.17.13
       '@types/jsonwebtoken': 8.5.5

@@ -12,40 +12,13 @@ import { toMessages } from './LINEMessageUtilities'
 import { createErrorMessage, SlackMessage } from './SlackMessageUtilities'
 import { getCronTable } from './Cron'
 import { handleTextMessage, handleImage } from './MessageHandler'
-import pino from 'pino'
 import axios from 'axios'
 import Encrypted from '@dtinth/encrypted'
 import sealedbox from 'tweetnacl-sealedbox-js'
 import { deployPrelude } from './PreludeCode'
+import { logger } from './logger'
 
 const app = express()
-const logger = pino({
-  // https://github.com/pinojs/pino/issues/726#issuecomment-605814879
-  messageKey: 'message',
-  formatters: {
-    level: (label) => {
-      function getSeverity(label: string) {
-        switch (label) {
-          case 'trace':
-            return 'DEBUG'
-          case 'debug':
-            return 'DEBUG'
-          case 'info':
-            return 'INFO'
-          case 'warn':
-            return 'WARNING'
-          case 'error':
-            return 'ERROR'
-          case 'fatal':
-            return 'CRITICAL'
-          default:
-            return 'DEFAULT'
-        }
-      }
-      return { severity: getSeverity(label) }
-    },
-  },
-}).child({ name: 'automatron' })
 
 function getAutomatronContext(req: Request): AutomatronContext {
   return { secrets: req.env }
@@ -311,7 +284,7 @@ function endpoint(
       })
       res.json({ ok: true, result })
     } catch (e) {
-      logError('Unable to execute endpoint', e)
+      logError('Unable to execute endpoint ' + req.path, e)
       try {
         await slackClient.pushMessage(createErrorMessage(e as any))
       } catch (ee) {

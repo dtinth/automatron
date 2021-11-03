@@ -5,6 +5,7 @@ import { sendHomeCommand } from './HomeAutomation'
 import { addCronEntry } from './Cron'
 import { decodeRomanNumerals } from './RomanNumerals'
 import { evaluateCode } from './CodeEvaluation'
+import { getCodeExecutionContext } from './PreludeCode'
 
 export async function handleTextMessage(
   context: AutomatronContext,
@@ -45,6 +46,8 @@ export async function handleTextMessage(
   ) {
     await sendHomeCommand(context, 'lights dimmed')
     await addCronEntry(context, Date.now() + 300e3, 'lights off')
+    const prelude = await getCodeExecutionContext(context)
+    await prelude.executeHandlers('bedtime')
     return 'ok, good night'
   } else if ((match = message.match(/^lights (\w+)$/))) {
     const cmd = match[1]

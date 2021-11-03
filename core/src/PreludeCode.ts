@@ -6,6 +6,7 @@ import jsonwebtoken from 'jsonwebtoken'
 import crypto from 'crypto'
 import util from 'util'
 import Encrypted from '@dtinth/encrypted'
+import { logger } from './logger'
 
 const storage = new Storage()
 const preludeFile = storage.bucket('dtinth-automatron-data').file('prelude.js')
@@ -53,6 +54,35 @@ export async function getCodeExecutionContext(
       )
     }
     return availableModules[id]
+  }
+
+  // Plugin system
+  type Handler = (...args: any[]) => Promise<void>
+  const registeredHandlers: Record<string, Set<Handler>> = {}
+  self.registerHandler = (event: string, handler: Handler) => {
+    if (!registeredHandlers[event]) {
+      registeredHandlers[event] = new Set()
+    }
+    registeredHandlers[event].add(handler)
+  }
+  self.executeHandlers = async (event: string, ...args: any[]) => {
+    await Promise.all(
+      [...(registeredHandlers[event] || [])].map(async (handler, i) => {
+        try {
+          const start = Date.now()
+          await handler(...args)
+          const elapsed = Date.now() - start
+          logger.info(
+            `Done executing handler index ${i} for event ${event} in ${elapsed} ms`
+          )
+        } catch (error) {
+          logger.error(
+            { err: error },
+            `Unable to execute handler index ${i} for event ${event}: ${error}`
+          )
+        }
+      })
+    )
   }
 
   // Execute user prelude

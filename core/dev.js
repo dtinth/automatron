@@ -68,6 +68,12 @@ require('yargs')
       .file('evalaas/automatron.env')
       .download({ destination: 'automatron.env' })
   })
+  .command('upload-env', 'Uploads environment file', {}, async () => {
+    await gcs
+      .bucket(bucketName)
+      .file('evalaas/automatron.env')
+      .save(fs.readFileSync('automatron.env'))
+  })
   .command(
     'set-up-codespaces',
     'Downloads Google Cloud service account file for usage in GitHub Codespaces',

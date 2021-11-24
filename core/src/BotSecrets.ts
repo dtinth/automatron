@@ -27,4 +27,6 @@ export interface BotSecrets {
   GITHUB_OAUTH_APP_CREDENTIALS: string
   /** Encryption secret for decrypting */
   ENCRYPTION_SECRET: string
+  /** Database storage */
+  MONGODB_URL: string
 }

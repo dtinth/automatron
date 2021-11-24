@@ -52,9 +52,11 @@ export async function handleTextMessage(
   } else if (message === 'ooo') {
     const prelude = await getCodeExecutionContext(context)
     await prelude.executeHandlers('ooo')
+    return 'ok, out of office'
   } else if (message === 'work') {
     const prelude = await getCodeExecutionContext(context)
     await prelude.executeHandlers('work')
+    return 'ok, set working status'
   } else if ((match = message.match(/^lights (\w+)$/))) {
     const cmd = match[1]
     await sendHomeCommand(context, 'lights ' + cmd)

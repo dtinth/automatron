@@ -7,6 +7,8 @@ import crypto from 'crypto'
 import util from 'util'
 import Encrypted from '@dtinth/encrypted'
 import { logger } from './logger'
+import * as mongodb from 'mongodb'
+import { getDb } from './MongoDatabase'
 
 const storage = new Storage()
 const preludeFile = storage.bucket('dtinth-automatron-data').file('prelude.js')
@@ -37,6 +39,7 @@ export async function getCodeExecutionContext(
   const self: any = {}
   self.encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
   self.extraMessages = []
+  self.getDb = () => getDb(context)
   self.require = (id: string) => {
     const availableModules: { [id: string]: any } = {
       axios,
@@ -44,6 +47,7 @@ export async function getCodeExecutionContext(
       jsonwebtoken,
       crypto,
       util,
+      mongodb,
     }
     const available = {}.hasOwnProperty.call(availableModules, id)
     if (!available) {

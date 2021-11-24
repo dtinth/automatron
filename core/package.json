@@ -36,7 +36,8 @@
     "transaction-parser-th": "0.1.1",
     "tweetnacl": "^1.0.3",
     "tweetnacl-sealedbox-js": "^1.2.0",
-    "verror": "^1.10.0"
+    "verror": "^1.10.0",
+    "mongodb": "~4.2.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.0",

@@ -9,6 +9,7 @@ import Encrypted from '@dtinth/encrypted'
 import { logger } from './logger'
 import * as mongodb from 'mongodb'
 import { getDb } from './MongoDatabase'
+import * as NotificationProcessor from './NotificationProcessor'
 
 const storage = new Storage()
 const preludeFile = storage.bucket('dtinth-automatron-data').file('prelude.js')
@@ -48,6 +49,7 @@ export async function getCodeExecutionContext(
       crypto,
       util,
       mongodb,
+      '@/NotificationProcessor': NotificationProcessor,
     }
     const available = {}.hasOwnProperty.call(availableModules, id)
     if (!available) {

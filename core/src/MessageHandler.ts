@@ -103,7 +103,12 @@ export async function handleTextMessage(
       ...extraMessages,
     ]
   }
-  return '(unrecognized message...)'
+
+  let extra = '…'
+  if (message.match(/^sticker:\d+:\d+$/)) {
+    extra = ': ' + message
+  }
+  return '(unrecognized message' + extra + ')'
 }
 
 export async function handleImage(

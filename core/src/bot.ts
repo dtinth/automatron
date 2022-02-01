@@ -17,6 +17,7 @@ import Encrypted from '@dtinth/encrypted'
 import sealedbox from 'tweetnacl-sealedbox-js'
 import { deployPrelude } from './PreludeCode'
 import { logger } from './logger'
+import { handleNotification } from './NotificationProcessor'
 
 const app = express()
 
@@ -201,11 +202,14 @@ app.post(
       )
       const notification = JSON.parse(Buffer.from(result).toString('utf8'))
       logger.info({ notification }, 'Received a notification')
-      await axios.post(forwardingTarget, req.body, {
-        headers: {
-          'Content-Type': 'text/plain',
-        },
-      })
+      await Promise.all([
+        axios.post(forwardingTarget, req.body, {
+          headers: {
+            'Content-Type': 'text/plain',
+          },
+        }),
+        handleNotification(context, notification),
+      ])
     } catch (err) {
       logger.error({ err, data: req.body }, 'Unable to process notification')
     }

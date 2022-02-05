@@ -6,10 +6,10 @@ const iotClient = new iot.v1.DeviceManagerClient()
 export async function sendHomeCommand(
   context: AutomatronContext,
   cmd: string | string[]
-) {
+): Promise<void> {
   const cmds = Array.isArray(cmd) ? cmd : [cmd]
   const formattedName = context.secrets.CLOUD_IOT_CORE_DEVICE_PATH
-  return Promise.all(
+  await Promise.all(
     cmds.map(async (command) => {
       const id =
         new Date().toJSON() +

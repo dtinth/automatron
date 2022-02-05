@@ -1,3 +1,4 @@
+import { FlexMessage } from '@line/bot-sdk'
 import { BotSecrets } from './BotSecrets'
 
 export interface AutomatronContext {
@@ -16,3 +17,5 @@ declare global {
     }
   }
 }
+
+export type AutomatronResponse = string | FlexMessage | FlexMessage[]

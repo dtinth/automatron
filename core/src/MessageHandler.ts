@@ -1,5 +1,5 @@
 import vision from '@google-cloud/vision'
-import { AutomatronContext } from './types'
+import { AutomatronContext, AutomatronResponse } from './types'
 import { recordExpense } from './ExpenseTracking'
 import { sendHomeCommand } from './HomeAutomation'
 import { addCronEntry } from './Cron'
@@ -10,7 +10,7 @@ import { getCodeExecutionContext } from './PreludeCode'
 export async function handleTextMessage(
   context: AutomatronContext,
   message: string
-) {
+): Promise<AutomatronResponse> {
   message = message.trim()
   let match: RegExpMatchArray | null
   if (message === 'ac on' || message === 'sticker:2:27') {

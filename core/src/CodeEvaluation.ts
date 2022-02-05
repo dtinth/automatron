@@ -1,5 +1,5 @@
 import { getCodeExecutionContext } from './PreludeCode'
-import { AutomatronContext } from './types'
+import { AutomatronContext, TextMessageHandler } from './types'
 
 export async function evaluateCode(input: string, context: AutomatronContext) {
   const code = input.startsWith(';')
@@ -47,4 +47,17 @@ function postProcessResult(returnedValue: any) {
     return returnedValue
   }
   return require('util').inspect(returnedValue)
+}
+
+export const CodeEvaluationMessageHandler: TextMessageHandler = (
+  text,
+  context
+) => {
+  if (text.startsWith(';')) {
+    return async () => {
+      const input = text.slice(1)
+      var { result, extraMessages } = await evaluateCode(input, context)
+      return [{ type: 'text', text: result }, ...extraMessages]
+    }
+  }
 }

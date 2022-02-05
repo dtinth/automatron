@@ -4,8 +4,10 @@ import { recordExpense } from './ExpenseTracking'
 import { sendHomeCommand } from './HomeAutomation'
 import { addCronEntry } from './Cron'
 import { decodeRomanNumerals } from './RomanNumerals'
-import { evaluateCode } from './CodeEvaluation'
+import { CodeEvaluationMessageHandler } from './CodeEvaluation'
 import { getCodeExecutionContext } from './PreludeCode'
+
+const messageHandlers = [CodeEvaluationMessageHandler]
 
 export async function handleTextMessage(
   context: AutomatronContext,
@@ -90,20 +92,17 @@ export async function handleTextMessage(
     return await recordExpense(context, amount, category, remarks)
   } else if ((match = message.match(/^([ivxlcdm]+)$/i))) {
     return `${match[1]} = ${decodeRomanNumerals(match[1])}`
-  } else if (message.startsWith(';')) {
-    const input = message.substr(1)
-    var { result, extraMessages } = await evaluateCode(input, context)
-    return [
-      // createBubble('livescript', result, {
-      //   headerBackground: '#37BF00',
-      //   headerColor: '#ffffff',
-      //   textSize: 'sm'
-      // }),
-      { type: 'text', text: result },
-      ...extraMessages,
-    ]
   }
 
+  // Go through message handlers and see if any of them can handle the message
+  for (const handler of messageHandlers) {
+    const action = handler(message, context)
+    if (action) {
+      return action()
+    }
+  }
+
+  // At this point, the message is not recognized
   let extra = '…'
   if (message.match(/^sticker:\d+:\d+$/)) {
     extra = ': ' + message

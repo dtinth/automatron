@@ -19,3 +19,8 @@ declare global {
 }
 
 export type AutomatronResponse = string | FlexMessage | FlexMessage[]
+
+export type TextMessageHandler = (
+  text: string,
+  context: AutomatronContext
+) => (() => Promise<AutomatronResponse>) | undefined

@@ -10,6 +10,7 @@ import { logger } from './logger'
 import * as mongodb from 'mongodb'
 import { getDb } from './MongoDatabase'
 import * as NotificationProcessor from './NotificationProcessor'
+import * as PersistentState from './PersistentState'
 
 const storage = new Storage()
 const preludeFile = storage.bucket('dtinth-automatron-data').file('prelude.js')
@@ -40,7 +41,8 @@ export async function getCodeExecutionContext(
   const self: any = {}
   self.encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
   self.extraMessages = []
-  self.getDb = () => getDb(context)
+  self.getDb = getDb.bind(null, context)
+  self.ref = PersistentState.ref.bind(null, context)
   self.require = (id: string) => {
     const availableModules: { [id: string]: any } = {
       axios,

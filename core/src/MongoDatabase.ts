@@ -1,14 +1,24 @@
 import { Db, MongoClient } from 'mongodb'
 import { AutomatronContext } from './types'
 
-let cachedDb: Db | null = null
+const globalCacheKey = Symbol.for('automatron/MongoDatabase')
+const cache: { dbPromise: Promise<Db> | null } = ((global as any)[
+  globalCacheKey
+] ??= {
+  dbPromise: null,
+})
 
 export async function getDb(context: AutomatronContext): Promise<Db> {
-  if (cachedDb) {
-    return cachedDb
+  if (cache.dbPromise) {
+    return cache.dbPromise
   }
-  const client = await MongoClient.connect(context.secrets.MONGODB_URL)
-  const db = client.db('automatron')
-  cachedDb = db
-  return db
+  cache.dbPromise = (async () => {
+    const client = await MongoClient.connect(context.secrets.MONGODB_URL)
+    const db = client.db('automatron')
+    return db
+  })()
+  cache.dbPromise.catch(() => {
+    cache.dbPromise = null
+  })
+  return cache.dbPromise
 }

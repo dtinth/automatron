@@ -6,6 +6,7 @@ import { addCronEntry } from './Cron'
 import { decodeRomanNumerals } from './RomanNumerals'
 import { CodeEvaluationMessageHandler } from './CodeEvaluation'
 import { getCodeExecutionContext } from './PreludeCode'
+import { ref } from './PersistentState'
 
 const messageHandlers = [CodeEvaluationMessageHandler]
 
@@ -102,12 +103,10 @@ export async function handleTextMessage(
     }
   }
 
-  // At this point, the message is not recognized
-  let extra = '…'
-  if (message.match(/^sticker:\d+:\d+$/)) {
-    extra = ': ' + message
-  }
-  return '(unrecognized message' + extra + ')'
+  // At this point, the message is not recognized.
+  // Just save it to the stack.
+  const size = await ref(context, 'stack').push(message)
+  return '(unrecognized message, saved to stack (size=' + size + '))'
 }
 
 export async function handleImage(

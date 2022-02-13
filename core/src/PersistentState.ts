@@ -34,9 +34,33 @@ async function pop(context: AutomatronContext, key: string): Promise<any> {
   return result.value!.value.pop()
 }
 
+async function get(context: AutomatronContext, key: string): Promise<any> {
+  const db = await getDb(context)
+  const result = await db.collection<StateDoc>('state').findOne({ _id: key })
+  return result?.value
+}
+
+async function set(
+  context: AutomatronContext,
+  key: string,
+  value: string
+): Promise<boolean> {
+  const db = await getDb(context)
+  const result = await db
+    .collection<StateDoc>('state')
+    .findOneAndUpdate(
+      { _id: key },
+      { $set: { value } },
+      { upsert: true, returnDocument: 'after' }
+    )
+  return !!result.ok
+}
+
 export function ref(context: AutomatronContext, key: string) {
   return {
     push: push.bind(null, context, key),
     pop: pop.bind(null, context, key),
+    get: get.bind(null, context, key),
+    set: set.bind(null, context, key),
   }
 }

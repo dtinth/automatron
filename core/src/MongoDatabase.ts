@@ -1,6 +1,8 @@
 import { Db, MongoClient } from 'mongodb'
 import { AutomatronContext } from './types'
 
+export { Db } from 'mongodb'
+
 const globalCacheKey = Symbol.for('automatron/MongoDatabase')
 const cache: { dbPromise: Promise<Db> | null } = ((global as any)[
   globalCacheKey

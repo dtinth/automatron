@@ -8,7 +8,7 @@ import util from 'util'
 import Encrypted from '@dtinth/encrypted'
 import { logger } from './logger'
 import * as mongodb from 'mongodb'
-import { getDb } from './MongoDatabase'
+import { Db, getDb } from './MongoDatabase'
 import * as NotificationProcessor from './NotificationProcessor'
 import * as PersistentState from './PersistentState'
 
@@ -41,8 +41,9 @@ export async function getCodeExecutionContext(
   const self: any = {}
   self.encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
   self.extraMessages = []
-  self.getDb = getDb.bind(null, context)
+  self.withDb = (f: (db: Db) => any) => getDb(context).then(f)
   self.ref = PersistentState.ref.bind(null, context)
+  self.stack = self.ref('stack')
   self.require = (id: string) => {
     const availableModules: { [id: string]: any } = {
       axios,

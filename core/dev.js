@@ -24,11 +24,14 @@ require('yargs')
     {},
     async (args) => {
       ora.info('Running bundler.')
-      const ncc = require('@zeit/ncc')('./src/bot.ts', {
+      const ncc = require('@vercel/ncc')(require.resolve('./src/bot.ts'), {
         externals: [
-          '@google-cloud/vision',
           '@google-cloud/iot',
+          '@google-cloud/firestore',
           '@google-cloud/storage',
+          '@google-cloud/trace-agent',
+          '@google-cloud/vision',
+          'mongodb',
         ],
         sourceMap: true,
         sourceMapRegister: false,

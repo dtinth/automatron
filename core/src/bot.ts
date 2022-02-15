@@ -22,7 +22,10 @@ import { handleNotification } from './NotificationProcessor'
 const app = express()
 
 function getAutomatronContext(req: Request): AutomatronContext {
-  return { secrets: req.env }
+  return {
+    secrets: req.env,
+    tracer: req.tracer,
+  }
 }
 
 async function handleWebhook(

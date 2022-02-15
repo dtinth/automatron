@@ -6,6 +6,7 @@
     "lib": ["es2017"],
     "esModuleInterop": true,
     "strict": true,
-    "rootDir": "src"
+    "rootDir": "src",
+    "skipLibCheck": true
   }
 }

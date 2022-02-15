@@ -8,6 +8,7 @@ import util from 'util'
 import Encrypted from '@dtinth/encrypted'
 import { logger } from './logger'
 import * as mongodb from 'mongodb'
+import * as os from 'os'
 import { Db, getDb } from './MongoDatabase'
 import * as NotificationProcessor from './NotificationProcessor'
 import * as PersistentState from './PersistentState'
@@ -27,11 +28,28 @@ export async function deployPrelude(context: AutomatronContext) {
   )
   const buffer = Buffer.from(userPreludeResponse.data.content, 'base64')
   await preludeFile.save(buffer)
+  await PersistentState.ref(context, 'preludeDeployedAt').set(
+    new Date().toISOString()
+  )
 }
 
-export async function getPreludeCode() {
+let cache: { deployedAt: string; code: string } | undefined
+
+export async function getPreludeCode(context: AutomatronContext) {
+  const latestDeployedAt = await PersistentState.ref(
+    context,
+    'preludeDeployedAt'
+  ).get()
+  if (cache && cache.deployedAt === latestDeployedAt) {
+    return cache.code
+  }
   const [buffer] = await preludeFile.download()
-  return buffer.toString('utf8')
+  const code = buffer.toString('utf8')
+  cache = {
+    deployedAt: latestDeployedAt,
+    code,
+  }
+  return code
 }
 
 export async function getCodeExecutionContext(
@@ -52,6 +70,7 @@ export async function getCodeExecutionContext(
       crypto,
       util,
       mongodb,
+      os,
       '@/NotificationProcessor': NotificationProcessor,
     }
     const available = {}.hasOwnProperty.call(availableModules, id)
@@ -95,7 +114,7 @@ export async function getCodeExecutionContext(
   }
 
   // Execute user prelude
-  const userPrelude = await getPreludeCode()
+  const userPrelude = await getPreludeCode(context)
   new Function(...['self', 'code'], 'with (self) { return eval(code) }')(
     self,
     userPrelude

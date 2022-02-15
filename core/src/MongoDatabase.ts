@@ -1,4 +1,5 @@
 import { Db, MongoClient } from 'mongodb'
+import { trace } from './Tracing'
 import { AutomatronContext } from './types'
 
 export { Db } from 'mongodb'
@@ -14,11 +15,11 @@ export async function getDb(context: AutomatronContext): Promise<Db> {
   if (cache.dbPromise) {
     return cache.dbPromise
   }
-  cache.dbPromise = (async () => {
+  cache.dbPromise = trace(context, 'getDb', async () => {
     const client = await MongoClient.connect(context.secrets.MONGODB_URL)
     const db = client.db('automatron')
     return db
-  })()
+  })
   cache.dbPromise.catch(() => {
     cache.dbPromise = null
   })

@@ -23,10 +23,10 @@ specifiers:
   dotenv: ^7.0.0
   execa: ^1.0.0
   express: 4.16.4
-  google-auth-library: ^7.9.2
   jsonwebtoken: ^8.5.1
   livescript: 1.6.0
   lodash: ^4.17.11
+  mongodb: ~4.2.0
   mqtt: 2.18.8
   ora: ^3.2.0
   pino: ^7.0.5
@@ -70,10 +70,10 @@ dependencies:
   dotenv: 7.0.0
   execa: 1.0.0
   express: 4.16.4
-  google-auth-library: 7.10.1
   jsonwebtoken: 8.5.1
   livescript: 1.6.0
   lodash: 4.17.21
+  mongodb: 4.2.0
   mqtt: 2.18.8
   ora: 3.4.0
   pino: 7.0.5
@@ -3385,6 +3385,15 @@ packages:
       mime-types: 2.1.33
     dev: false
 
+  /form-data/4.0.0:
+    resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
+    engines: {node: '>= 6'}
+    dependencies:
+      asynckit: 0.4.0
+      combined-stream: 1.0.8
+      mime-types: 2.1.33
+    dev: false
+
   /forwarded/0.2.0:
     resolution: {integrity: sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==}
     engines: {node: '>= 0.6'}
@@ -3659,6 +3668,23 @@ packages:
 
   /google-auth-library/7.10.1:
     resolution: {integrity: sha512-nQxgM1ZopUMcpMnu95kOSzI+9tJl4YDOZJomSTBGlRLpxfBopdwto7WvzoI87HuN0nQqVETgOsHi/C/po1rppA==}
+    engines: {node: '>=10'}
+    dependencies:
+      arrify: 2.0.1
+      base64-js: 1.5.1
+      ecdsa-sig-formatter: 1.0.11
+      fast-text-encoding: 1.0.3
+      gaxios: 4.3.2
+      gcp-metadata: 4.3.1
+      gtoken: 5.3.1
+      jws: 4.0.0
+      lru-cache: 6.0.0
+    transitivePeerDependencies:
+      - supports-color
+    dev: false
+
+  /google-auth-library/7.12.0:
+    resolution: {integrity: sha512-RS/whvFPMoF1hQNxnoVET3DWKPBt1Xgqe2rY0k+Jn7TNhoHlwdnSe7Rlcbo2Nub3Mt2lUVz26X65aDQrWp6x8w==}
     engines: {node: '>=10'}
     dependencies:
       arrify: 2.0.1
@@ -7156,7 +7182,7 @@ packages:
     dev: false
 
   file:projects/automatron-core.tgz:
-    resolution: {integrity: sha512-4D9VfYlDPj2GSxg2dBcZBH3OcGRDLUAUWKJd+dsnO+b4bIpbtJZFaaD4LExLSPotJnhBKH4KcP2hjxDqqNlz+g==, tarball: file:projects/automatron-core.tgz}
+    resolution: {integrity: sha512-k0lLtLo4R95U/6z9eNYHInXOnJ4RDrfKIs8QWZlCy848EV7oMtjHukxyhEMnQX8eQqFn4EY4nOSxk1FxqbGOAQ==, tarball: file:projects/automatron-core.tgz}
     name: '@rush-temp/automatron-core'
     version: 0.0.0
     dependencies:
@@ -7176,6 +7202,8 @@ packages:
       dotenv: 7.0.0
       execa: 1.0.0
       express: 4.16.4
+      form-data: 4.0.0
+      google-auth-library: 7.12.0
       jsonwebtoken: 8.5.1
       livescript: 1.6.0
       lodash: 4.17.21
@@ -7206,7 +7234,7 @@ packages:
       '@vercel/node': 1.12.1
       axios: 0.21.4
       cors: 2.8.5
-      google-auth-library: 7.10.1
+      google-auth-library: 7.12.0
       svelte: 3.44.0
       svelte-check: 2.2.8_svelte@3.44.0
       svelte-preprocess: 4.9.8_svelte@3.44.0+typescript@4.4.4

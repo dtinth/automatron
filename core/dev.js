@@ -5,12 +5,17 @@ if (!process.env.GOOGLE_CLOUD_PROJECT)
 
 const fs = require('fs')
 const ora = require('ora')()
+const FormData = require('form-data')
+const axios = require('axios').default
 const bucketName = `${process.env.GOOGLE_CLOUD_PROJECT}-evalaas`
 const { Storage } = require('@google-cloud/storage')
 const gcs = new Storage()
 let pushing = false
 let pending = false
 let latestResult
+
+const { GoogleAuth } = require('google-auth-library')
+const auth = new GoogleAuth()
 
 require('yargs')
   .command(
@@ -62,6 +67,10 @@ require('yargs')
       ora.info('Watching for file changes.')
     }
   )
+  .command('id-token', 'Prints ID token', {}, async () => {
+    const jwt = await getJwt()
+    console.log(jwt)
+  })
   .command('download-env', 'Downloads environment file', {}, async () => {
     await gcs
       .bucket(bucketName)
@@ -101,6 +110,13 @@ require('yargs')
   .help()
   .parse()
 
+async function getJwt() {
+  const audience = 'https://github.com/dtinth/automatron'
+  const client = await auth.getIdTokenClient(audience)
+  const jwt = await client.idTokenProvider.fetchIdToken(audience)
+  return jwt
+}
+
 async function push() {
   if (pushing) {
     pending = true
@@ -109,9 +125,19 @@ async function push() {
   pushing = true
   ora.start('Uploading code...')
   try {
-    await gcs
-      .bucket(bucketName)
-      .upload('automatron.js.gz', { destination: 'evalaas/automatron.js.gz' })
+    const jwt = await getJwt()
+    const form = new FormData()
+    const buffer = fs.readFileSync('automatron.js.gz')
+    form.append('file', buffer, 'file')
+    await axios.put(
+      `${process.env.EVALAAS_URL}/admin/endpoints/automatron`,
+      form.getBuffer(),
+      {
+        headers: Object.assign({}, form.getHeaders(), {
+          Authorization: `Bearer ${jwt}`,
+        }),
+      }
+    )
     ora.succeed('Done! Code updated at ' + new Date().toString())
   } catch (error) {
     ora.fail('Failed: ' + error)

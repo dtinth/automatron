@@ -7,15 +7,32 @@ import { decodeRomanNumerals } from './RomanNumerals'
 import { CodeEvaluationMessageHandler } from './CodeEvaluation'
 import { getCodeExecutionContext } from './PreludeCode'
 import { ref } from './PersistentState'
+import { getDb } from './MongoDatabase'
+import { trace } from './Tracing'
 
 const messageHandlers = [CodeEvaluationMessageHandler]
 
 export async function handleTextMessage(
   context: AutomatronContext,
-  message: string
+  message: string,
+  options: { source: string }
 ): Promise<AutomatronResponse> {
   message = message.trim()
   let match: RegExpMatchArray | null
+
+  context.addPromise(
+    'Save text history',
+    getDb(context).then((db) =>
+      trace(context, 'Save history', () =>
+        db.collection('history').insertOne({
+          time: new Date().toISOString(),
+          text: message,
+          source: options.source,
+        })
+      )
+    )
+  )
+
   if (message === 'ac on' || message === 'sticker:2:27') {
     await sendHomeCommand(context, 'ac on')
     return 'ok, turning air-con on'

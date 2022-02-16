@@ -5,6 +5,7 @@ import type { PluginTypes } from '@google-cloud/trace-agent'
 export interface AutomatronContext {
   secrets: BotSecrets
   tracer?: PluginTypes.Tracer
+  addPromise: (name: string, promise: Promise<any>) => void
 }
 
 declare global {
@@ -12,6 +13,9 @@ declare global {
     interface Request {
       env: BotSecrets
       tracer?: PluginTypes.Tracer
+    }
+    interface Response {
+      yields?: Promise<any>[]
     }
   }
   module NodeJS {

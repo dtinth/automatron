@@ -21,10 +21,14 @@ import { handleNotification } from './NotificationProcessor'
 
 const app = express()
 
-function getAutomatronContext(req: Request): AutomatronContext {
+function getAutomatronContext(req: Request, res: Response): AutomatronContext {
   return {
     secrets: req.env,
     tracer: req.tracer,
+    addPromise: (name, promise) => {
+      if (!res.yields) res.yields = []
+      res.yields.push(promise)
+    },
   }
 }
 
@@ -48,12 +52,15 @@ async function handleWebhook(
       return
     }
     if (message.type === 'text') {
-      const reply = await handleTextMessage(context, message.text)
+      const reply = await handleTextMessage(context, message.text, {
+        source: 'line',
+      })
       await client.replyMessage(replyToken, toMessages(reply))
     } else if (message.type === 'sticker') {
       const reply = await handleTextMessage(
         context,
-        'sticker:' + message.packageId + ':' + message.stickerId
+        'sticker:' + message.packageId + ':' + message.stickerId,
+        { source: 'line' }
       )
       await client.replyMessage(replyToken, toMessages(reply))
     } else if (message.type === 'image') {
@@ -72,7 +79,7 @@ async function handleWebhook(
 }
 
 app.post('/webhook', (req, res, next) => {
-  const lineConfig = getLineConfig(req)
+  const lineConfig = getLineConfig(req, res)
   middleware(lineConfig)(req, res, async (err) => {
     if (err) return next(err)
     endpoint(async (context, req, services) => {
@@ -119,7 +126,9 @@ app.post(
           .replace(/&lt;/g, '>')
           .replace(/&amp;/g, '&')
         const slackClient = services.slack
-        const reply = await handleTextMessage(context, text)
+        const reply = await handleTextMessage(context, text, {
+          source: 'slack',
+        })
         await slackClient.pushMessage({
           text: `\`\`\`${JSON.stringify(reply, null, 2)}\`\`\``,
         })
@@ -151,26 +160,29 @@ app.post(
       'Received a text API call'
     )
     const text = String(req.body.text)
-    services.auditSlack.pushMessage({
-      blocks: [
-        {
-          type: 'context',
-          elements: [
-            {
-              type: 'plain_text',
-              text: 'from ' + req.body.source,
-            },
-          ],
-        },
-        {
-          type: 'section',
-          text: {
-            type: 'plain_text',
-            text: text,
+    context.addPromise(
+      'Log to Slack',
+      services.auditSlack.pushMessage({
+        blocks: [
+          {
+            type: 'context',
+            elements: [
+              {
+                type: 'plain_text',
+                text: 'from ' + req.body.source,
+              },
+            ],
           },
-        },
-      ],
-    })
+          {
+            type: 'section',
+            text: {
+              type: 'plain_text',
+              text: text,
+            },
+          },
+        ],
+      })
+    )
 
     // const lineClient = services.line
     // await lineClient.pushMessage(
@@ -178,7 +190,9 @@ app.post(
     //   toMessages('received: ' + text + ` [from ${req.body.source}]`)
     // )
 
-    const reply = await handleTextMessage(context, text)
+    const reply = await handleTextMessage(context, text, {
+      source: 'text:' + req.body.source,
+    })
 
     // await lineClient.pushMessage(
     //   context.secrets.LINE_USER_ID,
@@ -267,7 +281,9 @@ app.get(
           job: { id: job.getId(), name: job.get('Name') },
         }
         try {
-          const reply = await handleTextMessage(context, job.get('Name'))
+          const reply = await handleTextMessage(context, job.get('Name'), {
+            source: 'cron:' + job.getId(),
+          })
           result = require('util').inspect(reply)
           logger.info(
             { ...logContext, result },
@@ -288,7 +304,7 @@ app.get(
 )
 
 function requireApiKey(req: Request, res: Response, next: NextFunction) {
-  const context = getAutomatronContext(req)
+  const context = getAutomatronContext(req, res)
   if (req.body.key !== context.secrets.API_KEY) {
     return res.status(401).json({ error: 'Invalid API key' })
   }
@@ -310,9 +326,9 @@ function endpoint(
   ) => Promise<any>
 ): RequestHandler {
   return async (req, res, next) => {
-    const context = getAutomatronContext(req)
+    const context = getAutomatronContext(req, res)
     const encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
-    const lineConfig = getLineConfig(req)
+    const lineConfig = getLineConfig(req, res)
     const lineClient = new Client(lineConfig)
     const slackClient = new Slack(context.secrets.SLACK_WEBHOOK_URL)
     const auditSlackClient = new Slack(
@@ -326,6 +342,7 @@ function endpoint(
         slack: slackClient,
         auditSlack: auditSlackClient,
       })
+      await Promise.allSettled(res.yields || [])
       res.json({ ok: true, result })
     } catch (e) {
       logError('Unable to execute endpoint ' + req.path, e)
@@ -335,6 +352,7 @@ function endpoint(
         console.error('Cannot send error message to LINE!')
         logError('Unable to send error message to Slack', ee)
       }
+      await Promise.allSettled(res.yields || [])
       return next(e)
     }
   }
@@ -350,8 +368,8 @@ function logError(title: string, e: any, extra: Record<string, any> = {}) {
   logger.error(bindings, `${title}: ${e}`)
 }
 
-function getLineConfig(req: Request) {
-  const context = getAutomatronContext(req)
+function getLineConfig(req: Request, res: Response) {
+  const context = getAutomatronContext(req, res)
   return {
     channelAccessToken: context.secrets.LINE_CHANNEL_ACCESS_TOKEN,
     channelSecret: context.secrets.LINE_CHANNEL_SECRET,

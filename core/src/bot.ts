@@ -43,10 +43,6 @@ async function handleWebhook(
 
   async function handleMessageEvent(event: MessageEvent) {
     const { replyToken, message } = event
-    logger.info(
-      { event: JSON.stringify(event) },
-      'Received a message event from LINE'
-    )
     if (event.source.userId !== context.secrets.LINE_USER_ID) {
       await client.replyMessage(replyToken, toMessages('unauthorized'))
       return
@@ -81,8 +77,11 @@ app.post('/webhook', (req, res, next) => {
     if (err) return next(err)
     endpoint(async (context, req, services) => {
       const lineClient = services.line
+      logger.info(
+        { ingest: 'line', event: JSON.stringify(req.body) },
+        'Received webhook from LINE'
+      )
       const data = await handleWebhook(context, req.body.events, lineClient)
-      console.log('Response:', data)
       return data
     })(req, res, next)
   })
@@ -93,7 +92,7 @@ app.post(
   require('body-parser').json(),
   (req, res, next) => {
     logger.info(
-      { event: JSON.stringify(req.body) },
+      { ingest: 'slack', event: JSON.stringify(req.body) },
       'Received an event from Slack'
     )
     if (req.body.type === 'url_verification') {
@@ -147,17 +146,45 @@ app.post(
   require('body-parser').json(),
   requireApiKey,
   endpoint(async (context, req, services) => {
+    logger.info(
+      { ingest: 'text', event: JSON.stringify(req.body) },
+      'Received a text API call'
+    )
     const text = String(req.body.text)
-    const lineClient = services.line
-    await lineClient.pushMessage(
-      context.secrets.LINE_USER_ID,
-      toMessages('received: ' + text + ` [from ${req.body.source}]`)
-    )
+    services.auditSlack.pushMessage({
+      blocks: [
+        {
+          type: 'context',
+          elements: [
+            {
+              type: 'plain_text',
+              text: 'from ' + req.body.source,
+            },
+          ],
+        },
+        {
+          type: 'section',
+          text: {
+            type: 'plain_text',
+            text: text,
+          },
+        },
+      ],
+    })
+
+    // const lineClient = services.line
+    // await lineClient.pushMessage(
+    //   context.secrets.LINE_USER_ID,
+    //   toMessages('received: ' + text + ` [from ${req.body.source}]`)
+    // )
+
     const reply = await handleTextMessage(context, text)
-    await lineClient.pushMessage(
-      context.secrets.LINE_USER_ID,
-      toMessages(reply)
-    )
+
+    // await lineClient.pushMessage(
+    //   context.secrets.LINE_USER_ID,
+    //   toMessages(reply)
+    // )
+
     return reply
   })
 )
@@ -167,7 +194,7 @@ app.post(
   require('body-parser').json(),
   endpoint(async (context, req, services) => {
     logger.info(
-      { event: JSON.stringify(req.body) },
+      { ingest: 'prelude-push', event: JSON.stringify(req.body) },
       'Received prelude push webhook from GitHub'
     )
     await deployPrelude(context)
@@ -204,7 +231,10 @@ app.post(
         Buffer.from(secretKey, 'base64')
       )
       const notification = JSON.parse(Buffer.from(result).toString('utf8'))
-      logger.info({ notification }, 'Received a notification')
+      logger.info(
+        { ingest: 'notification', notification },
+        'Received a notification from ' + notification.packageName
+      )
       await Promise.all([
         axios.post(forwardingTarget, req.body, {
           headers: {
@@ -276,18 +306,25 @@ function endpoint(
   f: (
     context: AutomatronContext,
     req: Request,
-    services: { line: Client; slack: Slack }
+    services: { line: Client; slack: Slack; auditSlack: Slack }
   ) => Promise<any>
 ): RequestHandler {
   return async (req, res, next) => {
     const context = getAutomatronContext(req)
+    const encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
     const lineConfig = getLineConfig(req)
     const lineClient = new Client(lineConfig)
     const slackClient = new Slack(context.secrets.SLACK_WEBHOOK_URL)
+    const auditSlackClient = new Slack(
+      encrypted(
+        'j3o0uDUL3OuYfUsYxZUkI8ECdaUIGxW0.HX1CMjS27oaZHnQormJbPIoE9xdPB3GsITBVXW2oIFeuuAb4xyWVJZyywWMubR1I1ECkXtBJN+Fs+98MECYk+u9YnlnAgw6DlE9e8TezE88C5DeNtOO0DOnSO6ww39Cn/w=='
+      )
+    )
     try {
       const result = await f(context, req, {
         line: lineClient,
         slack: slackClient,
+        auditSlack: auditSlackClient,
       })
       res.json({ ok: true, result })
     } catch (e) {

@@ -36,7 +36,7 @@
         <textarea
           name="text"
           type="text"
-          class="block w-full bg-emboss rounded border border-#454443 hover:border-#555453 active:border-#8b8685 py-1 px-2 shadow placeholder-#8b8685"
+          class="block w-full bg-emboss rounded border border-#454443 hover:border-#555453 active:border-#8b8685 py-1 px-2 shadow placeholder-#8b8685 font-mono"
           placeholder="Talk to automatron"
           autocomplete="off"
           autofocus={true}

@@ -1,27 +1,27 @@
-import express, {
-  RequestHandler,
-  Request,
-  Response,
-  NextFunction,
-} from 'express'
-import cors from 'cors'
-import { Client, middleware, WebhookEvent, MessageEvent } from '@line/bot-sdk'
-import { Stream } from 'stream'
-import { AutomatronContext } from './types'
-import { handleSMS } from './SMSHandler'
-import { toMessages } from './LINEMessageUtilities'
-import { createErrorMessage, SlackMessage } from './SlackMessageUtilities'
-import { getCronTable } from './Cron'
-import { handleTextMessage, handleImage } from './MessageHandler'
-import axios from 'axios'
 import Encrypted from '@dtinth/encrypted'
-import sealedbox from 'tweetnacl-sealedbox-js'
-import { deployPrelude } from './PreludeCode'
-import { logger } from './logger'
-import { handleNotification } from './NotificationProcessor'
+import { Client, MessageEvent, middleware, WebhookEvent } from '@line/bot-sdk'
+import axios from 'axios'
+import cors from 'cors'
+import express, {
+  NextFunction,
+  Request,
+  RequestHandler,
+  Response,
+} from 'express'
 import handler from 'express-async-handler'
 import { auth as jwtAuth, claimEquals } from 'express-oauth2-jwt-bearer'
+import { Stream } from 'stream'
+import sealedbox from 'tweetnacl-sealedbox-js'
+import { getCronTable } from './Cron'
+import { toMessages } from './LINEMessageUtilities'
+import { logger } from './logger'
+import { handleImage, handleTextMessage } from './MessageHandler'
 import { getDb } from './MongoDatabase'
+import { handleNotification } from './NotificationProcessor'
+import { deployPrelude } from './PreludeCode'
+import { createErrorMessage, SlackMessage } from './SlackMessageUtilities'
+import { handleSMS } from './SMSHandler'
+import { AutomatronContext } from './types'
 
 const app = express()
 
@@ -86,7 +86,9 @@ async function handleWebhook(
     } else if (message.type === 'image') {
       const content = await client.getMessageContent(message.id)
       const buffer = await readAsBuffer(content)
-      const reply = await handleImage(context, buffer as Buffer)
+      const reply = await handleImage(context, buffer as Buffer, {
+        source: 'line',
+      })
       await client.replyMessage(replyToken, toMessages(reply))
     } else {
       await client.replyMessage(replyToken, [

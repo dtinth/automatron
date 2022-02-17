@@ -1,4 +1,4 @@
-import { FlexMessage } from '@line/bot-sdk'
+import { FlexMessage, TextMessage } from '@line/bot-sdk'
 import { BotSecrets } from './BotSecrets'
 import type { PluginTypes } from '@google-cloud/trace-agent'
 
@@ -25,7 +25,14 @@ declare global {
   }
 }
 
-export type AutomatronResponse = string | FlexMessage | FlexMessage[]
+export { FlexMessage, TextMessage } from '@line/bot-sdk'
+
+export type AutomatronResponse =
+  | string
+  | TextMessage
+  | TextMessage[]
+  | FlexMessage
+  | FlexMessage[]
 
 export type TextMessageHandler = (
   text: string,

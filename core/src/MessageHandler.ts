@@ -1,17 +1,17 @@
-import vision from '@google-cloud/vision'
-import { AutomatronContext, AutomatronResponse } from './types'
+import { CodeEvaluationMessageHandler } from './CodeEvaluation'
+import { addCronEntry } from './Cron'
 import { recordExpense } from './ExpenseTracking'
 import { sendHomeCommand } from './HomeAutomation'
-import { addCronEntry } from './Cron'
-import { decodeRomanNumerals } from './RomanNumerals'
-import { CodeEvaluationMessageHandler } from './CodeEvaluation'
-import { getCodeExecutionContext } from './PreludeCode'
-import { ref } from './PersistentState'
+import { ImageMessageHandler } from './ImageMessageHandler'
 import { getDb } from './MongoDatabase'
-import { trace } from './Tracing'
+import { ref } from './PersistentState'
+import { getCodeExecutionContext } from './PreludeCode'
+import { decodeRomanNumerals } from './RomanNumerals'
 import { putBlob } from './TemporaryBlobStorage'
+import { trace } from './Tracing'
+import { AutomatronContext, AutomatronResponse } from './types'
 
-const messageHandlers = [CodeEvaluationMessageHandler]
+const messageHandlers = [CodeEvaluationMessageHandler, ImageMessageHandler]
 
 export async function handleTextMessage(
   context: AutomatronContext,
@@ -129,44 +129,9 @@ export async function handleTextMessage(
 
 export async function handleImage(
   context: AutomatronContext,
-  imageBuffer: Buffer
+  imageBuffer: Buffer,
+  options: { source: string }
 ) {
   const blobName = await putBlob(imageBuffer, '.jpg')
-  await ref(context, 'latestImage').set(blobName)
-  const imageAnnotator = new vision.ImageAnnotatorClient()
-  const results = await imageAnnotator.documentTextDetection(imageBuffer)
-  const fullTextAnnotation = results[0].fullTextAnnotation
-  const blocks: string[] = []
-  for (const page of fullTextAnnotation.pages) {
-    blocks.push(
-      ...page.blocks.map((block) => {
-        return block.paragraphs
-          .map((p) =>
-            p.words.map((w) => w.symbols.map((s) => s.text).join('')).join(' ')
-          )
-          .join('\n\n')
-      })
-    )
-  }
-  const blocksToResponses = (blocks: string[]) => {
-    if (blocks.length <= 4) return blocks
-    let processedIndex = 0
-    const outBlocks = []
-    for (let i = 0; i < 4; i++) {
-      const targetIndex = Math.ceil(((i + 1) * blocks.length) / 4)
-      outBlocks.push(
-        blocks
-          .slice(processedIndex, targetIndex)
-          .map((x) => `・ ${x}`)
-          .join('\n')
-      )
-      processedIndex = targetIndex
-    }
-    return outBlocks
-  }
-  const responses = blocksToResponses(blocks)
-  return [
-    { type: 'text', text: blobName },
-    ...responses.map((r) => ({ type: 'text', text: r })),
-  ]
+  return await handleTextMessage(context, 'image:' + blobName, options)
 }

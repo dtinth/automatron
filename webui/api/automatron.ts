@@ -47,8 +47,9 @@ export default async (req: VercelRequest, res: VercelResponse) => {
       return
     }
 
-    if (req.query.action === 'url') {
-      res.json(process.env.AUTOMATRON_URL)
+    if (req.query.action === 'endpoint') {
+      res.json({ url: process.env.AUTOMATRON_URL })
+      return
     }
 
     if (req.query.action === 'text') {

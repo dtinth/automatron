@@ -18,6 +18,7 @@ import sealedbox from 'tweetnacl-sealedbox-js'
 import { deployPrelude } from './PreludeCode'
 import { logger } from './logger'
 import { handleNotification } from './NotificationProcessor'
+import handler from 'express-async-handler'
 
 const app = express()
 
@@ -30,6 +31,22 @@ function getAutomatronContext(req: Request, res: Response): AutomatronContext {
       res.yields.push(promise)
     },
   }
+}
+
+async function runMiddleware(
+  req: Request,
+  res: Response,
+  middleware: RequestHandler
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    middleware(req, res, (error) => {
+      if (error) {
+        reject(error)
+      } else {
+        resolve()
+      }
+    })
+  })
 }
 
 async function handleWebhook(
@@ -78,11 +95,12 @@ async function handleWebhook(
   return main()
 }
 
-app.post('/webhook', (req, res, next) => {
-  const lineConfig = getLineConfig(req, res)
-  middleware(lineConfig)(req, res, async (err) => {
-    if (err) return next(err)
-    endpoint(async (context, req, services) => {
+app.post(
+  '/webhook',
+  handler(async (req, res) => {
+    const lineConfig = getLineConfig(req, res)
+    await runMiddleware(req, res, middleware(lineConfig))
+    await handleRequest(req, res, async (context, services) => {
       const lineClient = services.line
       logger.info(
         { ingest: 'line', event: JSON.stringify(req.body) },
@@ -90,9 +108,9 @@ app.post('/webhook', (req, res, next) => {
       )
       const data = await handleWebhook(context, req.body.events, lineClient)
       return data
-    })(req, res, next)
+    })
   })
-})
+)
 
 app.post(
   '/slack',
@@ -318,43 +336,59 @@ class Slack {
   }
 }
 
+interface ThirdPartyServices {
+  line: Client
+  slack: Slack
+  auditSlack: Slack
+}
+
 function endpoint(
   f: (
     context: AutomatronContext,
     req: Request,
-    services: { line: Client; slack: Slack; auditSlack: Slack }
+    services: ThirdPartyServices
   ) => Promise<any>
 ): RequestHandler {
-  return async (req, res, next) => {
-    const context = getAutomatronContext(req, res)
-    const encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
-    const lineConfig = getLineConfig(req, res)
-    const lineClient = new Client(lineConfig)
-    const slackClient = new Slack(context.secrets.SLACK_WEBHOOK_URL)
-    const auditSlackClient = new Slack(
-      encrypted(
-        'j3o0uDUL3OuYfUsYxZUkI8ECdaUIGxW0.HX1CMjS27oaZHnQormJbPIoE9xdPB3GsITBVXW2oIFeuuAb4xyWVJZyywWMubR1I1ECkXtBJN+Fs+98MECYk+u9YnlnAgw6DlE9e8TezE88C5DeNtOO0DOnSO6ww39Cn/w=='
-      )
+  return handler(async (req, res) => {
+    await handleRequest(req, res, (context, services) =>
+      f(context, req, services)
     )
+  })
+}
+
+async function handleRequest(
+  req: Request,
+  res: Response,
+  f: (context: AutomatronContext, services: ThirdPartyServices) => Promise<any>
+) {
+  const context = getAutomatronContext(req, res)
+  const encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
+  const lineConfig = getLineConfig(req, res)
+  const lineClient = new Client(lineConfig)
+  const slackClient = new Slack(context.secrets.SLACK_WEBHOOK_URL)
+  const auditSlackClient = new Slack(
+    encrypted(
+      'j3o0uDUL3OuYfUsYxZUkI8ECdaUIGxW0.HX1CMjS27oaZHnQormJbPIoE9xdPB3GsITBVXW2oIFeuuAb4xyWVJZyywWMubR1I1ECkXtBJN+Fs+98MECYk+u9YnlnAgw6DlE9e8TezE88C5DeNtOO0DOnSO6ww39Cn/w=='
+    )
+  )
+  try {
+    const result = await f(context, {
+      line: lineClient,
+      slack: slackClient,
+      auditSlack: auditSlackClient,
+    })
+    await Promise.allSettled(res.yields || [])
+    res.json({ ok: true, result })
+  } catch (e) {
+    logError('Unable to execute endpoint ' + req.path, e)
     try {
-      const result = await f(context, req, {
-        line: lineClient,
-        slack: slackClient,
-        auditSlack: auditSlackClient,
-      })
-      await Promise.allSettled(res.yields || [])
-      res.json({ ok: true, result })
-    } catch (e) {
-      logError('Unable to execute endpoint ' + req.path, e)
-      try {
-        await slackClient.pushMessage(createErrorMessage(e as any))
-      } catch (ee) {
-        console.error('Cannot send error message to LINE!')
-        logError('Unable to send error message to Slack', ee)
-      }
-      await Promise.allSettled(res.yields || [])
-      return next(e)
+      await slackClient.pushMessage(createErrorMessage(e as any))
+    } catch (ee) {
+      console.error('Cannot send error message to LINE!')
+      logError('Unable to send error message to Slack', ee)
     }
+    await Promise.allSettled(res.yields || [])
+    throw e
   }
 }
 

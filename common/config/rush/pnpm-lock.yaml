@@ -31,6 +31,7 @@ specifiers:
   lodash: ^4.17.11
   mongodb: ^4.3.1
   mqtt: 2.18.8
+  nanoid: ~3.3.0
   ora: ^3.2.0
   pino: ^7.0.5
   prelude-ls: 1.1.2
@@ -82,6 +83,7 @@ dependencies:
   lodash: 4.17.21
   mongodb: 4.3.1
   mqtt: 2.18.8
+  nanoid: 3.3.0
   ora: 3.4.0
   pino: 7.0.5
   prelude-ls: 1.1.2
@@ -2793,6 +2795,10 @@ packages:
       p-finally: 1.0.0
       signal-exit: 3.0.5
       strip-eof: 1.0.0
+    dev: false
+
+  /express-async-handler/1.2.0:
+    resolution: {integrity: sha512-rCSVtPXRmQSW8rmik/AIb2P0op6l7r1fMW538yyvTMltCO4xQEWMmobfrIxN2V1/mVrgxB8Az3reYF6yUZw37w==}
     dev: false
 
   /express/4.16.4:
@@ -5737,7 +5743,7 @@ packages:
     dev: false
 
   file:projects/automatron-core.tgz:
-    resolution: {integrity: sha512-v4xYGx4l8GSAi+VRSIJK6DGUPJM+Kd4k0azltJ9YTHnN9rDwrxj6f6ZcNvEiCoNyhyRFIIA6CMX6ybYD0tb79A==, tarball: file:projects/automatron-core.tgz}
+    resolution: {integrity: sha512-AtuAHjGEgpiA9JIpGn8bFbFVEKTdwpIm+9GQyMvkIlwm2BzkbCyAFtqsNiar7hPFZrImBwqyFI9Jsg7fysn6QA==, tarball: file:projects/automatron-core.tgz}
     name: '@rush-temp/automatron-core'
     version: 0.0.0
     dependencies:
@@ -5760,6 +5766,7 @@ packages:
       dotenv: 7.0.0
       execa: 1.0.0
       express: 4.16.4
+      express-async-handler: 1.2.0
       form-data: 4.0.0
       google-auth-library: 7.12.0
       jsonwebtoken: 8.5.1

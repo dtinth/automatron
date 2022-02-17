@@ -3945,6 +3945,12 @@ packages:
     hasBin: true
     dev: false
 
+  /nanoid/3.3.0:
+    resolution: {integrity: sha512-JzxqqT5u/x+/KOFSd7JP15DOo9nOoHpx6DYatqIHUW2+flybkm+mdcraotSQR5WcnZr+qhGVh8Ted0KdfSMxlg==}
+    engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
+    hasBin: true
+    dev: false
+
   /negotiator/0.6.2:
     resolution: {integrity: sha512-hZXc7K2e+PgeI1eDBe/10Ard4ekbfrrqG8Ep+8Jmf4JID2bNg7NvCPOZN+kfF574pFQI7mum2AUqDidoKqcTOw==}
     engines: {node: '>= 0.6'}
@@ -5731,7 +5737,7 @@ packages:
     dev: false
 
   file:projects/automatron-core.tgz:
-    resolution: {integrity: sha512-sNjtZuyBoHH6HDfrRwWbslwYQz8Ktz4DIaKyMhLTDTHNwylGKVV0ToSw2+RHkSclu3M1gr8gG6lvHZdZ7t0WAQ==, tarball: file:projects/automatron-core.tgz}
+    resolution: {integrity: sha512-v4xYGx4l8GSAi+VRSIJK6DGUPJM+Kd4k0azltJ9YTHnN9rDwrxj6f6ZcNvEiCoNyhyRFIIA6CMX6ybYD0tb79A==, tarball: file:projects/automatron-core.tgz}
     name: '@rush-temp/automatron-core'
     version: 0.0.0
     dependencies:
@@ -5761,6 +5767,7 @@ packages:
       lodash: 4.17.21
       mongodb: 4.3.1
       mqtt: 2.18.8
+      nanoid: 3.3.0
       ora: 3.4.0
       pino: 7.0.5
       prelude-ls: 1.1.2

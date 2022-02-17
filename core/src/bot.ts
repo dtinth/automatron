@@ -16,7 +16,7 @@ import { getCronTable } from './Cron'
 import { toMessages } from './LINEMessageUtilities'
 import { logger } from './logger'
 import { handleImage, handleTextMessage } from './MessageHandler'
-import { getDb } from './MongoDatabase'
+import { getMessageHistory } from './MessageHistory'
 import { handleNotification } from './NotificationProcessor'
 import { deployPrelude } from './PreludeCode'
 import { createErrorMessage, SlackMessage } from './SlackMessageUtilities'
@@ -216,27 +216,13 @@ app.post(
   '/history',
   requireGoogleAuth,
   cors(),
-  endpoint(async (context, req, services) => {
+  endpoint(async (context, req) => {
     logger.info(
       { ingest: 'history', event: JSON.stringify(req.body) },
       'Received a history API call'
     )
-    const db = await getDb(context)
     return {
-      history: await db
-        .collection('history')
-        .find({})
-        .sort({ _id: -1 })
-        .limit(20)
-        .toArray()
-        .then((docs) =>
-          docs.map((doc) => ({
-            id: doc._id,
-            text: doc.text,
-            time: doc.time,
-            source: doc.source,
-          }))
-        ),
+      history: await getMessageHistory(context, { limit: 20 }),
     }
   })
 )

@@ -3,6 +3,10 @@ import { addCronEntry } from './Cron'
 import { recordExpense } from './ExpenseTracking'
 import { sendHomeCommand } from './HomeAutomation'
 import { ImageMessageHandler } from './ImageMessageHandler'
+import {
+  MessageHistoryMessageHandler,
+  saveMessageHistory,
+} from './MessageHistory'
 import { getDb } from './MongoDatabase'
 import { ref } from './PersistentState'
 import { getCodeExecutionContext } from './PreludeCode'
@@ -11,7 +15,11 @@ import { putBlob } from './TemporaryBlobStorage'
 import { trace } from './Tracing'
 import { AutomatronContext, AutomatronResponse } from './types'
 
-const messageHandlers = [CodeEvaluationMessageHandler, ImageMessageHandler]
+const messageHandlers = [
+  CodeEvaluationMessageHandler,
+  ImageMessageHandler,
+  MessageHistoryMessageHandler,
+]
 
 export async function handleTextMessage(
   context: AutomatronContext,
@@ -25,11 +33,7 @@ export async function handleTextMessage(
     'Save text history',
     getDb(context).then((db) =>
       trace(context, 'Save history', () =>
-        db.collection('history').insertOne({
-          time: new Date().toISOString(),
-          text: message,
-          source: options.source,
-        })
+        saveMessageHistory(context, message, options.source)
       )
     )
   )

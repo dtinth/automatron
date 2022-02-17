@@ -13,32 +13,14 @@ export async function evaluateCode(input: string, context: AutomatronContext) {
         .replace(/^\(function/, '(async function')
   console.log('Code compilation result', code)
   const runner = new Function(
-    ...['prelude', 'self', 'code', 'context', 'state'],
-    'with (prelude) { with (self) { with (state) { return [ eval(code), state ] } } }'
+    ...['prelude', 'self', 'code', 'context'],
+    'with (prelude) { with (self) { return [ eval(code) ] } }'
   )
-  // TODO: Load storage to `prevStateSnapshot`
-  const prevStateSnapshot = '{}'
-  const prevState = JSON.parse(prevStateSnapshot)
-
   const self = await getCodeExecutionContext(context)
-  const [value, nextState] = runner(
-    require('prelude-ls'),
-    self,
-    code,
-    context,
-    prevState
-  )
+  const [value] = runner(require('prelude-ls'), self, code, context)
   const returnedValue = await Promise.resolve(value)
   let result = postProcessResult(returnedValue)
   const extraMessages = [...self.extraMessages]
-  const nextStateSnapshot = JSON.stringify(nextState)
-  if (nextStateSnapshot !== prevStateSnapshot) {
-    extraMessages.push({
-      type: 'text',
-      text: 'state = ' + JSON.stringify(nextState, null, 2),
-    })
-    // TODO: Save `nextStateSnapshot` to storage
-  }
   return { result, extraMessages }
 }
 
@@ -56,8 +38,16 @@ export const CodeEvaluationMessageHandler: TextMessageHandler = (
   if (text.startsWith(';')) {
     return async () => {
       const input = text.slice(1)
-      var { result, extraMessages } = await evaluateCode(input, context)
-      return [{ type: 'text', text: result }, ...extraMessages]
+      try {
+        var { result, extraMessages } = await evaluateCode(input, context)
+        return [{ type: 'text', text: result }, ...extraMessages]
+      } catch (error: any) {
+        const stack = String(error.stack).replace(
+          /\/evalaas\/webpack:\/@dtinth\/automatron-core\//g,
+          ''
+        )
+        return [{ type: 'text', text: `❌ EVALUATION FAILED ❌\n${stack}` }]
+      }
     }
   }
 }

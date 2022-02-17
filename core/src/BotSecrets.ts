@@ -29,4 +29,6 @@ export interface BotSecrets {
   ENCRYPTION_SECRET: string
   /** Database storage */
   MONGODB_URL: string
+  /** Subject ID for Google Auth */
+  GOOGLE_AUTH_SUB: string
 }

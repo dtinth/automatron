@@ -4,6 +4,7 @@ import express, {
   Response,
   NextFunction,
 } from 'express'
+import cors from 'cors'
 import { Client, middleware, WebhookEvent, MessageEvent } from '@line/bot-sdk'
 import { Stream } from 'stream'
 import { AutomatronContext } from './types'
@@ -19,6 +20,7 @@ import { deployPrelude } from './PreludeCode'
 import { logger } from './logger'
 import { handleNotification } from './NotificationProcessor'
 import handler from 'express-async-handler'
+import { auth as jwtAuth, claimEquals } from 'express-oauth2-jwt-bearer'
 
 const app = express()
 
@@ -178,48 +180,56 @@ app.post(
       'Received a text API call'
     )
     const text = String(req.body.text)
-    context.addPromise(
-      'Log to Slack',
-      services.auditSlack.pushMessage({
-        blocks: [
-          {
-            type: 'context',
-            elements: [
-              {
-                type: 'plain_text',
-                text: 'from ' + req.body.source,
-              },
-            ],
-          },
-          {
-            type: 'section',
-            text: {
-              type: 'plain_text',
-              text: text,
-            },
-          },
-        ],
-      })
-    )
-
-    // const lineClient = services.line
-    // await lineClient.pushMessage(
-    //   context.secrets.LINE_USER_ID,
-    //   toMessages('received: ' + text + ` [from ${req.body.source}]`)
-    // )
-
+    logToSlack(context, services.auditSlack, text, req.body.source)
     const reply = await handleTextMessage(context, text, {
       source: 'text:' + req.body.source,
     })
-
-    // await lineClient.pushMessage(
-    //   context.secrets.LINE_USER_ID,
-    //   toMessages(reply)
-    // )
-
     return reply
   })
 )
+
+app.options('/webpost', cors() as any)
+app.post(
+  '/webpost',
+  require('body-parser').json(),
+  requireGoogleAuth,
+  cors(),
+  endpoint(async (context, req, services) => {
+    logger.info(
+      { ingest: 'webpost', event: JSON.stringify(req.body) },
+      'Received a webpost API call'
+    )
+    const text = String(req.body.text)
+    logToSlack(context, services.auditSlack, text, req.body.source)
+    const reply = await handleTextMessage(context, text, {
+      source: 'webpost:' + req.body.source,
+    })
+    return reply
+  })
+)
+
+function logToSlack(
+  context: AutomatronContext,
+  slack: Slack,
+  text: string,
+  source: string
+) {
+  context.addPromise(
+    'Log to Slack',
+    slack.pushMessage({
+      blocks: [
+        {
+          type: 'context',
+          elements: [{ type: 'plain_text', text: 'from ' + source }],
+        },
+        {
+          type: 'section',
+          text: { type: 'plain_text', text: text },
+        },
+      ],
+    })
+  )
+}
 
 app.post(
   '/gh/prelude/push',
@@ -327,6 +337,21 @@ function requireApiKey(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ error: 'Invalid API key' })
   }
   next()
+}
+
+const googleAuthn = jwtAuth({
+  issuer: 'accounts.google.com',
+  jwksUri: 'https://www.googleapis.com/oauth2/v3/certs',
+  audience:
+    '347735770628-l928d9ddaf33p8bvsr90aos4mmmacrgq.apps.googleusercontent.com',
+})
+function requireGoogleAuth(req: Request, res: Response, next: NextFunction) {
+  return googleAuthn(req, res, (err) => {
+    if (err) {
+      return next(err)
+    }
+    claimEquals('sub', req.env.GOOGLE_AUTH_SUB)(req, res, next)
+  })
 }
 
 class Slack {

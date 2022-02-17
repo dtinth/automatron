@@ -3,28 +3,46 @@
   import axios from 'axios'
   import { pwaStatus } from './PWAStatus'
 
-  let displayedText = '…'
+  let displayedText = '...'
+  let url: string | undefined
+
+  async function getUrl(onRequest: () => void) {
+    return (
+      url ||
+      (await (async () => {
+        onRequest()
+        const urlResponse = await axios.get('/api/automatron?action=endpoint', {
+          headers: { Authorization: `Bearer ${$currentUserInfo.idToken}` },
+        })
+        url = urlResponse.data.url
+        return url
+      })())
+    )
+  }
 
   const submit: svelte.JSX.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault()
     const form = e.currentTarget
     const text = form.text.value
+    const requestUrl = await getUrl(() => {
+      displayedText = 'Requesting URL...'
+    })
     displayedText = 'Sending request to automatron...'
     const response = await axios.post(
-      '/api/automatron?action=text',
-      {
-        text: text,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${$currentUserInfo.idToken}`,
-        },
-      },
+      `${requestUrl}/webpost`,
+      { text: text, source: 'web' },
+      { headers: { Authorization: `Bearer ${$currentUserInfo.idToken}` } },
     )
+    let data = response.data
+    if (
+      Array.isArray(data.result) &&
+      data.result.length === 1 &&
+      data.result[0].type === 'text'
+    ) {
+      data = data.result[0].text
+    }
     displayedText =
-      typeof response.data === 'string'
-        ? response.data
-        : JSON.stringify(response.data, null, 2)
+      typeof data === 'string' ? data : JSON.stringify(data, null, 2)
   }
 </script>
 

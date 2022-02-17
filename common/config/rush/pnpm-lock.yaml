@@ -21,10 +21,11 @@ specifiers:
   '@vercel/node': ^1.12.1
   airtable: 0.5.9
   body-parser: 1.18.3
-  cors: ^2.8.5
   dotenv: ^7.0.0
   execa: ^1.0.0
   express: 4.16.4
+  express-async-handler: ~1.2.0
+  express-oauth2-jwt-bearer: ~1.1.0
   form-data: ~4.0.0
   jsonwebtoken: ^8.5.1
   livescript: 1.6.0
@@ -73,10 +74,11 @@ dependencies:
   '@vercel/node': 1.12.1
   airtable: 0.5.9
   body-parser: 1.18.3
-  cors: 2.8.5
   dotenv: 7.0.0
   execa: 1.0.0
   express: 4.16.4
+  express-async-handler: 1.2.0
+  express-oauth2-jwt-bearer: 1.1.0
   form-data: 4.0.0
   jsonwebtoken: 8.5.1
   livescript: 1.6.0
@@ -1613,6 +1615,10 @@ packages:
       '@types/node': 14.17.32
     dev: false
 
+  /@types/cors/2.8.12:
+    resolution: {integrity: sha512-vt+kDhq/M2ayberEtJcIN/hxXy1Pk+59g2FV/ZQceeaTyCtCucjL2Q7FXlFjtWn4n15KCr1NE2lNNFhp0lEThw==}
+    dev: false
+
   /@types/estree/0.0.39:
     resolution: {integrity: sha512-EYNwp3bU+98cpU4lAWYYL7Zz+2gryWH1qbdDTidVd6hkiR6weksdbMadyXKXNPEkQFhXM+hVO9ZygomHXp+AIw==}
     dev: false
@@ -2801,6 +2807,13 @@ packages:
     resolution: {integrity: sha512-rCSVtPXRmQSW8rmik/AIb2P0op6l7r1fMW538yyvTMltCO4xQEWMmobfrIxN2V1/mVrgxB8Az3reYF6yUZw37w==}
     dev: false
 
+  /express-oauth2-jwt-bearer/1.1.0:
+    resolution: {integrity: sha512-T9sSmGftzMACOH1oY2gniHkiJ53dWjPgIUD/CrJDL5Ss5PeX+PAol53upd7eaKLiLn/vp+AMTefxkkDIPEJXBQ==}
+    engines: {node: 12.19.0 || ^14.15.0 || ^16.13.0}
+    dependencies:
+      jose: 4.5.0
+    dev: false
+
   /express/4.16.4:
     resolution: {integrity: sha512-j12Uuyb4FMrd/qQAm6uCHAkPtO8FDTRJZBDd5D2KOL2eLaz1yUNdUB/NOIyq0iU4q4cFarsUCrnFDPBcnksuOg==}
     engines: {node: '>= 0.10.0'}
@@ -3513,6 +3526,10 @@ packages:
       '@types/node': 13.13.52
       merge-stream: 2.0.0
       supports-color: 7.2.0
+    dev: false
+
+  /jose/4.5.0:
+    resolution: {integrity: sha512-GFcVFQwYQKbQTUOo2JlpFGXTkgBw26uzDsRMD2q1WgSKNSnpKS9Ug7bdQ8dS+p4sZHNH6iRPu6WK2jLIjspaMA==}
     dev: false
 
   /js-tokens/4.0.0:
@@ -5743,7 +5760,7 @@ packages:
     dev: false
 
   file:projects/automatron-core.tgz:
-    resolution: {integrity: sha512-AtuAHjGEgpiA9JIpGn8bFbFVEKTdwpIm+9GQyMvkIlwm2BzkbCyAFtqsNiar7hPFZrImBwqyFI9Jsg7fysn6QA==, tarball: file:projects/automatron-core.tgz}
+    resolution: {integrity: sha512-oKTBRn7/N7l7yPQJalfm+l25d1bvzE4FjdkvUCDY6oVGpA+Fe7iMEUM4+SYujNcH79kE6mQpwGrZWQ4uzHPRSw==, tarball: file:projects/automatron-core.tgz}
     name: '@rush-temp/automatron-core'
     version: 0.0.0
     dependencies:
@@ -5755,6 +5772,7 @@ packages:
       '@google-cloud/vision': 2.4.2
       '@line/bot-sdk': 7.4.0
       '@slack/types': 1.10.0
+      '@types/cors': 2.8.12
       '@types/express': 4.17.13
       '@types/jsonwebtoken': 8.5.5
       '@types/node': 13.13.52
@@ -5763,10 +5781,12 @@ packages:
       airtable: 0.5.9
       axios: 0.18.0
       body-parser: 1.18.3
+      cors: 2.8.5
       dotenv: 7.0.0
       execa: 1.0.0
       express: 4.16.4
       express-async-handler: 1.2.0
+      express-oauth2-jwt-bearer: 1.1.0
       form-data: 4.0.0
       google-auth-library: 7.12.0
       jsonwebtoken: 8.5.1

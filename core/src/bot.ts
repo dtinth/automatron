@@ -21,6 +21,7 @@ import { logger } from './logger'
 import { handleNotification } from './NotificationProcessor'
 import handler from 'express-async-handler'
 import { auth as jwtAuth, claimEquals } from 'express-oauth2-jwt-bearer'
+import { getDb } from './MongoDatabase'
 
 const app = express()
 
@@ -205,6 +206,36 @@ app.post(
       source: 'webpost:' + req.body.source,
     })
     return reply
+  })
+)
+
+app.options('/history', cors() as any)
+app.post(
+  '/history',
+  requireGoogleAuth,
+  cors(),
+  endpoint(async (context, req, services) => {
+    logger.info(
+      { ingest: 'history', event: JSON.stringify(req.body) },
+      'Received a history API call'
+    )
+    const db = await getDb(context)
+    return {
+      history: await db
+        .collection('history')
+        .find({})
+        .sort({ _id: -1 })
+        .limit(20)
+        .toArray()
+        .then((docs) =>
+          docs.map((doc) => ({
+            id: doc._id,
+            text: doc.text,
+            time: doc.time,
+            source: doc.source,
+          }))
+        ),
+    }
   })
 )
 

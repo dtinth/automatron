@@ -1,45 +1,26 @@
 <script lang="ts">
   import { signInController, currentUserInfo } from './GoogleSignIn'
-  import axios from 'axios'
   import { pwaStatus } from './PWAStatus'
+  import { automatronRequest } from './AutomatronClient'
+  import CommandHistory from './CommandHistory.svelte'
 
   let displayedText = '...'
-  let url: string | undefined
-
-  async function getUrl(onRequest: () => void) {
-    return (
-      url ||
-      (await (async () => {
-        onRequest()
-        const urlResponse = await axios.get('/api/automatron?action=endpoint', {
-          headers: { Authorization: `Bearer ${$currentUserInfo.idToken}` },
-        })
-        url = urlResponse.data.url
-        return url
-      })())
-    )
-  }
 
   const submit: svelte.JSX.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault()
     const form = e.currentTarget
     const text = form.text.value
-    const requestUrl = await getUrl(() => {
-      displayedText = 'Requesting URL...'
+    displayedText = 'Sending...'
+    const response = await automatronRequest(`/webpost`, {
+      text: text,
+      source: 'web',
     })
-    displayedText = 'Sending request to automatron...'
-    const response = await axios.post(
-      `${requestUrl}/webpost`,
-      { text: text, source: 'web' },
-      { headers: { Authorization: `Bearer ${$currentUserInfo.idToken}` } },
-    )
     let data = response.data
-    if (
-      Array.isArray(data.result) &&
-      data.result.length === 1 &&
-      data.result[0].type === 'text'
-    ) {
-      data = data.result[0].text
+    if (data.ok && data.result) {
+      data = data.result
+    }
+    if (Array.isArray(data) && data.length === 1 && data[0].type === 'text') {
+      data = data[0].text
     }
     displayedText =
       typeof data === 'string' ? data : JSON.stringify(data, null, 2)
@@ -84,6 +65,7 @@
       </div>
     </form>
     <pre class="my-6" wrap="">{displayedText}</pre>
+    <CommandHistory />
   {:else}
     <p class="text-center">
       <button

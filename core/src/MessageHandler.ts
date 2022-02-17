@@ -9,6 +9,7 @@ import { getCodeExecutionContext } from './PreludeCode'
 import { ref } from './PersistentState'
 import { getDb } from './MongoDatabase'
 import { trace } from './Tracing'
+import { putBlob } from './TemporaryBlobStorage'
 
 const messageHandlers = [CodeEvaluationMessageHandler]
 
@@ -127,9 +128,11 @@ export async function handleTextMessage(
 }
 
 export async function handleImage(
-  _context: AutomatronContext,
+  context: AutomatronContext,
   imageBuffer: Buffer
 ) {
+  const blobName = await putBlob(imageBuffer, '.jpg')
+  await ref(context, 'latestImage').set(blobName)
   const imageAnnotator = new vision.ImageAnnotatorClient()
   const results = await imageAnnotator.documentTextDetection(imageBuffer)
   const fullTextAnnotation = results[0].fullTextAnnotation
@@ -146,11 +149,11 @@ export async function handleImage(
     )
   }
   const blocksToResponses = (blocks: string[]) => {
-    if (blocks.length <= 5) return blocks
+    if (blocks.length <= 4) return blocks
     let processedIndex = 0
     const outBlocks = []
-    for (let i = 0; i < 5; i++) {
-      const targetIndex = Math.ceil(((i + 1) * blocks.length) / 5)
+    for (let i = 0; i < 4; i++) {
+      const targetIndex = Math.ceil(((i + 1) * blocks.length) / 4)
       outBlocks.push(
         blocks
           .slice(processedIndex, targetIndex)
@@ -162,5 +165,8 @@ export async function handleImage(
     return outBlocks
   }
   const responses = blocksToResponses(blocks)
-  return responses.map((r) => ({ type: 'text', text: r }))
+  return [
+    { type: 'text', text: blobName },
+    ...responses.map((r) => ({ type: 'text', text: r })),
+  ]
 }

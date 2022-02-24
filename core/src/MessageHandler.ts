@@ -11,6 +11,7 @@ import { getDb } from './MongoDatabase'
 import { ref } from './PersistentState'
 import { getCodeExecutionContext } from './PreludeCode'
 import { decodeRomanNumerals } from './RomanNumerals'
+import { SpendingTrackingMessageHandler } from './SpendingTracking'
 import { putBlob } from './TemporaryBlobStorage'
 import { trace } from './Tracing'
 import { AutomatronContext, AutomatronResponse } from './types'
@@ -19,6 +20,7 @@ const messageHandlers = [
   CodeEvaluationMessageHandler,
   ImageMessageHandler,
   MessageHistoryMessageHandler,
+  SpendingTrackingMessageHandler,
 ]
 
 export async function handleTextMessage(

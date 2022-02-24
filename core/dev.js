@@ -61,7 +61,10 @@ require('yargs')
         require('fs').writeFileSync('automatron.js.gz', gzippedBuffer)
 
         // https://github.com/zeit/ncc/pull/516#issuecomment-601708133
-        // require('fs').writeFileSync('webpack.stats.json', result.stats.toJson())
+        // require('fs').writeFileSync(
+        //   'webpack.stats.json',
+        //   JSON.stringify(result.stats.toJson())
+        // )
         push()
       })
       ncc.rebuild(() => {

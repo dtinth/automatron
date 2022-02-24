@@ -9,6 +9,7 @@ import {
 } from './MessageHistory'
 import { getDb } from './MongoDatabase'
 import { ref } from './PersistentState'
+import { PhoneFinderMessageHandler } from './PhoneFinder'
 import { getCodeExecutionContext } from './PreludeCode'
 import { decodeRomanNumerals } from './RomanNumerals'
 import { SpendingTrackingMessageHandler } from './SpendingTracking'
@@ -21,6 +22,7 @@ const messageHandlers = [
   ImageMessageHandler,
   MessageHistoryMessageHandler,
   SpendingTrackingMessageHandler,
+  PhoneFinderMessageHandler,
 ]
 
 export async function handleTextMessage(

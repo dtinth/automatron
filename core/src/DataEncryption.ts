@@ -8,3 +8,8 @@ export function decrypt(
   const encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
   return encrypted(encryptedPayload)
 }
+
+export function encrypt(context: AutomatronContext, payload: any): string {
+  const encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
+  return encrypted.encrypt(payload)
+}

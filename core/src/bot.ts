@@ -13,6 +13,7 @@ import { auth as jwtAuth, claimEquals } from 'express-oauth2-jwt-bearer'
 import { Stream } from 'stream'
 import sealedbox from 'tweetnacl-sealedbox-js'
 import { getCronTable } from './Cron'
+import { encrypt } from './DataEncryption'
 import { toMessages } from './LINEMessageUtilities'
 import { logger } from './logger'
 import { handleImage, handleTextMessage } from './MessageHandler'
@@ -224,6 +225,15 @@ app.post(
     return {
       history: await getMessageHistory(context, { limit: 20 }),
     }
+  })
+)
+
+// http post $AUTOMATRON/encrypt data=meow
+app.post(
+  '/encrypt',
+  express.json(),
+  endpoint(async (context, req) => {
+    return encrypt(context, req.body.data)
   })
 )
 

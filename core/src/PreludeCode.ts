@@ -13,6 +13,7 @@ import { Db, getDb } from './MongoDatabase'
 import * as NotificationProcessor from './NotificationProcessor'
 import * as PersistentState from './PersistentState'
 
+const lib = require('lib')
 const storage = new Storage()
 const preludeFile = storage.bucket('dtinth-automatron-data').file('prelude.js')
 
@@ -71,6 +72,7 @@ export async function getCodeExecutionContext(
       util,
       mongodb,
       os,
+      lib,
       '@/NotificationProcessor': NotificationProcessor,
     }
     const available = {}.hasOwnProperty.call(availableModules, id)

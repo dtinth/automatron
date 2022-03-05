@@ -1,7 +1,7 @@
 lockfileVersion: 5.3
 
 specifiers:
-  '@dtinth/encrypted': ^0.2.1
+  '@dtinth/encrypted': ^0.3.0
   '@dtinth/google-sign-in-controller': ^0.0.1-2
   '@google-cloud/firestore': ^5.0.2
   '@google-cloud/iot': ^2.5.1
@@ -29,6 +29,7 @@ specifiers:
   express-oauth2-jwt-bearer: ~1.1.0
   form-data: ~4.0.0
   jsonwebtoken: ^8.5.1
+  lib: ~4.3.3
   livescript: 1.6.0
   lodash: ^4.17.11
   mongodb: ^4.3.1
@@ -55,7 +56,7 @@ specifiers:
   yargs: ^13.2.2
 
 dependencies:
-  '@dtinth/encrypted': 0.2.1
+  '@dtinth/encrypted': 0.3.0
   '@dtinth/google-sign-in-controller': 0.0.1-2
   '@google-cloud/firestore': 5.0.2
   '@google-cloud/iot': 2.5.1
@@ -83,6 +84,7 @@ dependencies:
   express-oauth2-jwt-bearer: 1.1.0
   form-data: 4.0.0
   jsonwebtoken: 8.5.1
+  lib: 4.3.3
   livescript: 1.6.0
   lodash: 4.17.21
   mongodb: 4.3.1
@@ -1235,11 +1237,11 @@ packages:
       to-fast-properties: 2.0.0
     dev: false
 
-  /@dtinth/encrypted/0.2.1:
-    resolution: {integrity: sha512-5xWFwD7tozYXaLzuRhCQL0XYqH0+SpmlU+TK3uKG8lHArLWWpPp7cAYdGhbWQ9LK5W0/+FGvRyUTJ7mSNigvRQ==}
+  /@dtinth/encrypted/0.3.0:
+    resolution: {integrity: sha512-J+zsCFFi31njCyF+jmS2HaYUWKTtjdobVV45WeH8tf91QwNbA6AbMrPuTtLK9YDfOOldZS7uFCFoj0UUOcN0bw==}
     hasBin: true
     dependencies:
-      '@types/node': 13.13.52
+      '@types/node': 14.17.32
       dotenv: 8.6.0
       tweetnacl: 1.0.3
     dev: false
@@ -5767,11 +5769,11 @@ packages:
     dev: false
 
   file:projects/automatron-core.tgz:
-    resolution: {integrity: sha512-yeuEFvQB6YXdzziKiaXhANQ+uU1sTkzIZPvF6IcgX4UewR884lfZidsd6OjOTtpqguV+nPlKFnpREz4uojjo2g==, tarball: file:projects/automatron-core.tgz}
+    resolution: {integrity: sha512-xTHgK+2yht7ScYS+HkjwIeQOpuwSebLK7QqrAWkGv6hArWkEXzCyWtodTVKxz67VBhCbgJ1PQrUIx9OG3ePQZQ==, tarball: file:projects/automatron-core.tgz}
     name: '@rush-temp/automatron-core'
     version: 0.0.0
     dependencies:
-      '@dtinth/encrypted': 0.2.1
+      '@dtinth/encrypted': 0.3.0
       '@google-cloud/firestore': 5.0.2
       '@google-cloud/iot': 2.5.1
       '@google-cloud/storage': 5.18.1

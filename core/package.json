@@ -16,7 +16,7 @@
     "dev": "node dev.js"
   },
   "dependencies": {
-    "@dtinth/encrypted": "^0.2.1",
+    "@dtinth/encrypted": "^0.3.0",
     "@google-cloud/iot": "^2.5.1",
     "@google-cloud/storage": "^5.18.1",
     "@google-cloud/trace-agent": "^5.1.6",

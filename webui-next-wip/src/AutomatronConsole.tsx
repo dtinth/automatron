@@ -32,6 +32,7 @@ export const AutomatronConsole: FC<AutomatronConsole> = (props) => {
           className="bg-bevel hover:border-#555453 block rounded border border-#454443 p-2 text-xl text-#8b8685 shadow-md shadow-black/50 active:border-#8b8685"
           type="submit"
           disabled={sendMutation.isLoading}
+          title="Send"
         >
           <Icon icon={send} />
         </button>

@@ -16,7 +16,7 @@ const firestore = getFirestore(app)
 
 class AutomatronBackend {
   authStore = new SyncExternalStore<User | null | undefined>(undefined)
-  url?: string
+  private url?: string
 
   constructor() {
     onAuthStateChanged(auth, (user) => {
@@ -27,7 +27,7 @@ class AutomatronBackend {
     })
   }
 
-  async getUrl() {
+  private async getUrl() {
     if (this.url) {
       return this.url
     }
@@ -71,6 +71,25 @@ class AutomatronBackend {
   }
 }
 
-export const backend = new AutomatronBackend()
+class FakeBackend {
+  authStore = new SyncExternalStore<{} | null | undefined>(null)
+
+  async signIn() {
+    this.authStore.state = {}
+  }
+
+  async signOut() {
+    this.authStore.state = null
+  }
+
+  async send(text: string): Promise<any> {
+    return JSON.parse(text)
+  }
+}
+
+export const backend =
+  new URLSearchParams(location.search).get('backend') === 'fake'
+    ? new FakeBackend()
+    : new AutomatronBackend()
 
 Object.assign(window, { backend })

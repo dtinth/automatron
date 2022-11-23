@@ -21,6 +21,7 @@ function App() {
           onClick={() => {
             location.replace('#')
           }}
+          title="Close"
         >
           <Icon icon={x} />
         </FloatingButton>
@@ -40,7 +41,7 @@ function App() {
       {authState === undefined ? (
         <></>
       ) : authState === null ? (
-        <FloatingButton onClick={backend.signIn}>
+        <FloatingButton onClick={() => backend.signIn()} title="Sign In">
           <Icon icon={running} />
         </FloatingButton>
       ) : (
@@ -48,6 +49,7 @@ function App() {
           onClick={() => {
             location.replace('#automatron')
           }}
+          title="Automatron"
         >
           <Icon icon={menu} />
         </FloatingButton>
@@ -58,6 +60,7 @@ function App() {
 }
 
 export interface FloatingButton {
+  title: string
   children: ReactNode
   onClick?: () => void
 }
@@ -65,7 +68,11 @@ export interface FloatingButton {
 export const FloatingButton: FC<FloatingButton> = (props) => {
   return (
     <div className="absolute top-2 right-2">
-      <button onClick={props.onClick} className="p-2 text-3xl text-#8b8685">
+      <button
+        onClick={props.onClick}
+        className="p-2 text-3xl text-#8b8685"
+        title={props.title}
+      >
         {props.children}
       </button>
     </div>

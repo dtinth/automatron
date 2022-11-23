@@ -6,18 +6,32 @@ import {
   signInWithPopup,
   signOut as signOutFirebase,
 } from 'firebase/auth'
+import { getFirestore, doc, getDoc } from 'firebase/firestore'
 import { app } from './firebase'
 import { SyncExternalStore } from 'sync-external-store'
 
 const auth = getAuth(app)
+const firestore = getFirestore(app)
 
 class AutomatronBackend {
   authStore = new SyncExternalStore<User | null | undefined>(undefined)
+  url?: string
 
   constructor() {
     onAuthStateChanged(auth, (user) => {
       this.authStore.state = user
+      if (user && !this.url) {
+        this.getUrl()
+      }
     })
+  }
+
+  async getUrl() {
+    const s = await getDoc(
+      doc(firestore, 'apps', 'automatron', 'config', 'url')
+    )
+    this.url = s.data()?.service
+    return this.url
   }
 
   async signIn() {

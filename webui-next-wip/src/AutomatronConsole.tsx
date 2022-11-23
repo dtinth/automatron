@@ -37,6 +37,11 @@ export const AutomatronConsole: FC<AutomatronConsole> = (props) => {
         </button>
       </form>
       <div className=" mt-2 p-2">
+        {!!sendMutation.isLoading && (
+          <pre className="whitespace-pre-wrap font-mono text-yellow-400">
+            Sending...
+          </pre>
+        )}
         {!!sendMutation.isError && (
           <pre className="whitespace-pre-wrap font-mono text-red-300">
             {String(sendMutation.error)}

@@ -4,14 +4,14 @@ import menu from '@iconify-icons/cil/menu'
 import send from '@iconify-icons/cil/send'
 import x from '@iconify-icons/cil/x'
 import { useSyncExternalStore } from 'react'
-import { authStore, signIn } from './auth'
+import { backend } from './backend'
 import { Clock } from './Clock'
 import { hashStore } from './hash'
 
 function App() {
   const authState = useSyncExternalStore(
-    authStore.subscribe,
-    authStore.getSnapshot
+    backend.authStore.subscribe,
+    backend.authStore.getSnapshot
   )
   const hash = useSyncExternalStore(hashStore.subscribe, hashStore.getSnapshot)
   if (hash === '#automatron' && authState) {
@@ -40,7 +40,7 @@ function App() {
       {authState === undefined ? (
         <></>
       ) : authState === null ? (
-        <FloatingButton onClick={signIn}>
+        <FloatingButton onClick={backend.signIn}>
           <Icon icon={running} />
         </FloatingButton>
       ) : (

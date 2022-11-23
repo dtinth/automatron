@@ -1,31 +1,23 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
+import { useEffect, useState } from 'react'
 
 function App() {
-  const [count, setCount] = useState(0)
+  return <Clock />
+}
 
+const getTime = () => {
+  return new Date().toString().split(' ')[4].split(':').slice(0, 2).join(':')
+}
+function Clock() {
+  const [time, setTime] = useState(getTime)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime(getTime())
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [])
   return (
-    <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+    <div className="come-up flex h-screen items-center justify-center text-transparent [font:bold_37.5vw_Arimo] [-webkit-text-stroke:0.5px_#d7fc70]">
+      {time}
     </div>
   )
 }

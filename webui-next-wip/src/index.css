@@ -1,3 +1,18 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.come-up {
+  animation: 0.25s come-up;
+}
+
+@keyframes come-up {
+  from {
+    transform: scale(0.99);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

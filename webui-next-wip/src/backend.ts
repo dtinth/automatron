@@ -9,6 +9,7 @@ import {
 import { getFirestore, doc, getDoc } from 'firebase/firestore'
 import { app } from './firebase'
 import { SyncExternalStore } from 'sync-external-store'
+import axios from 'axios'
 
 const auth = getAuth(app)
 const firestore = getFirestore(app)
@@ -27,6 +28,9 @@ class AutomatronBackend {
   }
 
   async getUrl() {
+    if (this.url) {
+      return this.url
+    }
     const s = await getDoc(
       doc(firestore, 'apps', 'automatron', 'config', 'url')
     )
@@ -46,6 +50,24 @@ class AutomatronBackend {
 
   async signOut() {
     await signOutFirebase(auth)
+  }
+
+  async send(text: string): Promise<any> {
+    const url = (await this.getUrl()) + '/webpost-firebase'
+    const response = await axios.post(
+      url,
+      { text, source: 'web' },
+      {
+        headers: {
+          Authorization: `Bearer ${await this.getIdToken()}`,
+        },
+      }
+    )
+    return response.data
+  }
+
+  private async getIdToken() {
+    return await auth.currentUser!.getIdToken()
   }
 }
 

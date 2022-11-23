@@ -212,6 +212,26 @@ app.post(
   })
 )
 
+app.options('/webpost-firebase', cors() as any)
+app.post(
+  '/webpost-firebase',
+  require('body-parser').json(),
+  requireFirebaseAuth,
+  cors(),
+  endpoint(async (context, req, services) => {
+    logger.info(
+      { ingest: 'webpost-firebase', event: JSON.stringify(req.body) },
+      'Received a webpost API call with Firebase credentials'
+    )
+    const text = String(req.body.text)
+    logToSlack(context, services.auditSlack, text, req.body.source)
+    const reply = await handleTextMessage(context, text, {
+      source: 'webpost:' + req.body.source,
+    })
+    return reply
+  })
+)
+
 app.options('/history', cors() as any)
 app.post(
   '/history',
@@ -380,6 +400,25 @@ function requireGoogleAuth(req: Request, res: Response, next: NextFunction) {
       return next(err)
     }
     claimEquals('sub', req.env.GOOGLE_AUTH_SUB)(req, res, next)
+  })
+}
+
+const firebaseAuthn = jwtAuth({
+  issuer: 'https://securetoken.google.com/dtinth-automatron',
+  jwksUri:
+    'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com',
+  audience: 'dtinth-automatron',
+})
+function requireFirebaseAuth(req: Request, res: Response, next: NextFunction) {
+  const encrypted = Encrypted(req.env.ENCRYPTION_SECRET)
+  const sub = encrypted(
+    `HnX5zHMDR/F7ZUy8sw2829Wi7cYbi/3c.6CBZ+I3sTbyYsXUg81qf+OvjRQExIfVkkhGvEs9E+w7LAO4y9KwU1DtKAtIutA==`
+  )
+  return firebaseAuthn(req, res, (err) => {
+    if (err) {
+      return next(err)
+    }
+    claimEquals('sub', sub)(req, res, next)
   })
 }
 

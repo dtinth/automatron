@@ -57,12 +57,26 @@ class AutomatronBackend {
     const response = await axios.post(
       url,
       { text, source: 'web' },
-      {
-        headers: {
-          Authorization: `Bearer ${await this.getIdToken()}`,
-        },
-      }
+      { headers: await this.getHeaders() }
     )
+    return response.data
+  }
+
+  private async getHeaders() {
+    return {
+      Authorization: `Bearer ${await this.getIdToken()}`,
+    }
+  }
+
+  async getHistory(): Promise<any> {
+    const url = (await this.getUrl()) + '/history'
+    const response = await axios.get(url, { headers: await this.getHeaders() })
+    return response.data
+  }
+
+  async getSpeedDials(): Promise<any> {
+    const url = (await this.getUrl()) + '/speed-dials'
+    const response = await axios.get(url, { headers: await this.getHeaders() })
     return response.data
   }
 
@@ -80,6 +94,14 @@ class FakeBackend {
 
   async signOut() {
     this.authStore.state = null
+  }
+
+  async getHistory(): Promise<any> {
+    return { ok: true, result: { history: [] } }
+  }
+
+  async getSpeedDials(): Promise<any> {
+    return { ok: true, result: { speedDials: [] } }
   }
 
   async send(text: string): Promise<any> {

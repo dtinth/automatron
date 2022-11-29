@@ -22,6 +22,7 @@ import { handleNotification } from './NotificationProcessor'
 import { deployPrelude } from './PreludeCode'
 import { createErrorMessage, SlackMessage } from './SlackMessageUtilities'
 import { handleSMS } from './SMSHandler'
+import { getAllSpeedDials } from './SpeedDial'
 import { AutomatronContext } from './types'
 
 const app = express()
@@ -192,26 +193,6 @@ app.post(
   })
 )
 
-app.options('/webpost', cors() as any)
-app.post(
-  '/webpost',
-  require('body-parser').json(),
-  requireGoogleAuth,
-  cors(),
-  endpoint(async (context, req, services) => {
-    logger.info(
-      { ingest: 'webpost', event: JSON.stringify(req.body) },
-      'Received a webpost API call'
-    )
-    const text = String(req.body.text)
-    logToSlack(context, services.auditSlack, text, req.body.source)
-    const reply = await handleTextMessage(context, text, {
-      source: 'webpost:' + req.body.source,
-    })
-    return reply
-  })
-)
-
 app.options('/webpost-firebase', cors() as any)
 app.post(
   '/webpost-firebase',
@@ -233,9 +214,9 @@ app.post(
 )
 
 app.options('/history', cors() as any)
-app.post(
+app.get(
   '/history',
-  requireGoogleAuth,
+  requireFirebaseAuth,
   cors(),
   endpoint(async (context, req) => {
     logger.info(
@@ -244,6 +225,22 @@ app.post(
     )
     return {
       history: await getMessageHistory(context, { limit: 20 }),
+    }
+  })
+)
+
+app.options('/speed-dials', cors() as any)
+app.get(
+  '/speed-dials',
+  requireFirebaseAuth,
+  cors(),
+  endpoint(async (context, req) => {
+    logger.info(
+      { ingest: 'speed-dials', event: JSON.stringify(req.body) },
+      'Received a speed dial API call'
+    )
+    return {
+      speedDials: await getAllSpeedDials(context),
     }
   })
 )
@@ -386,21 +383,6 @@ function requireApiKey(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ error: 'Invalid API key' })
   }
   next()
-}
-
-const googleAuthn = jwtAuth({
-  issuer: 'accounts.google.com',
-  jwksUri: 'https://www.googleapis.com/oauth2/v3/certs',
-  audience:
-    '347735770628-l928d9ddaf33p8bvsr90aos4mmmacrgq.apps.googleusercontent.com',
-})
-function requireGoogleAuth(req: Request, res: Response, next: NextFunction) {
-  return googleAuthn(req, res, (err) => {
-    if (err) {
-      return next(err)
-    }
-    claimEquals('sub', req.env.GOOGLE_AUTH_SUB)(req, res, next)
-  })
 }
 
 const firebaseAuthn = jwtAuth({

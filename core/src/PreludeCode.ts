@@ -12,6 +12,7 @@ import * as os from 'os'
 import { Db, getDb } from './MongoDatabase'
 import * as NotificationProcessor from './NotificationProcessor'
 import * as PersistentState from './PersistentState'
+import { getAllSpeedDials, getSpeedDialCode, saveSpeedDial } from './SpeedDial'
 
 const lib = require('lib')
 const storage = new Storage()
@@ -58,6 +59,12 @@ export async function getCodeExecutionContext(
 ): Promise<any> {
   // Prepare "self" context
   const self: any = {}
+  self.exec = (code: string) => {
+    return new Function(
+      ...['self', 'code'],
+      'with (self) { return eval(code) }'
+    )(self, code)
+  }
   self.encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
   self.extraMessages = []
   self.withDb = (f: (db: Db) => any) => getDb(context).then(f)
@@ -84,6 +91,26 @@ export async function getCodeExecutionContext(
       )
     }
     return availableModules[id]
+  }
+  self.json = (x: any) => JSON.stringify(x, null, 2)
+  self.SD = async (name?: string, f?: () => any) => {
+    if (name && f) {
+      if (typeof f !== 'function') {
+        throw new Error('f must be a function')
+      }
+      await saveSpeedDial(context, name, f.toString())
+      return 'Saved speed dial'
+    } else if (name) {
+      const code = await getSpeedDialCode(context, name)
+      self.extraMessages.push({
+        type: 'text',
+        text: `;;SD('${name}', ${code})`,
+      })
+      return self.exec(code)()
+    } else {
+      const all = await getAllSpeedDials(context)
+      return all.map((s) => s._id)
+    }
   }
 
   // Plugin system
@@ -117,10 +144,7 @@ export async function getCodeExecutionContext(
 
   // Execute user prelude
   const userPrelude = await getPreludeCode(context)
-  new Function(...['self', 'code'], 'with (self) { return eval(code) }')(
-    self,
-    userPrelude
-  )
+  self.exec(userPrelude)
 
   return self
 }

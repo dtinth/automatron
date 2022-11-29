@@ -12,6 +12,7 @@ specifiers:
   '@vitejs/plugin-react': ^2.2.0
   autoprefixer: ^10.4.13
   axios: ^1.2.0
+  clsx: ^1.2.1
   firebase: ^9.14.0
   postcss: ^8.4.19
   prettier: ^2.8.0
@@ -23,6 +24,7 @@ specifiers:
   typescript: ^4.6.4
   vite: ^3.2.3
   vite-plugin-pwa: ^0.13.3
+  zod: ^3.19.1
 
 dependencies:
   '@fontsource/arimo': 4.5.10
@@ -30,10 +32,12 @@ dependencies:
   '@iconify-icons/cil': 1.2.4
   '@tanstack/react-query': 4.16.1_biqbaboplfbrettd7655fr4n2y
   axios: 1.2.0
+  clsx: 1.2.1
   firebase: 9.14.0
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
   sync-external-store: 1.0.0
+  zod: 3.19.1
 
 devDependencies:
   '@playwright/test': 1.28.1
@@ -2319,6 +2323,11 @@ packages:
       wrap-ansi: 7.0.0
     dev: false
 
+  /clsx/1.2.1:
+    resolution: {integrity: sha512-EcR6r5a8bj6pu3ycsa/E/cKVGuTgZJZdsyUYHOksG/UHIiKfjxzRxYJpyVBwYaQeOvghal9fcc4PidlgzugAQg==}
+    engines: {node: '>=6'}
+    dev: false
+
   /color-convert/1.9.3:
     resolution: {integrity: sha512-QfAUtd+vFdAtFQcC8CCyYt1fYWxSqAiK2cSD6zDB8N3cpsEBAvRxp9zOGg6G/SHHJYAT88/az/IuDGALsNVbGg==}
     dependencies:
@@ -4380,4 +4389,8 @@ packages:
       string-width: 4.2.3
       y18n: 5.0.8
       yargs-parser: 20.2.9
+    dev: false
+
+  /zod/3.19.1:
+    resolution: {integrity: sha512-LYjZsEDhCdYET9ikFu6dVPGp2YH9DegXjdJToSzD9rO6fy4qiRYFoyEYwps88OseJlPyl2NOe2iJuhEhL7IpEA==}
     dev: false

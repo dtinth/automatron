@@ -116,7 +116,7 @@ export const OutputViewer: FC<OutputViewer> = (props) => {
   if (okResult.success) {
     const result = okResult.data.result
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 text-sm">
         {result.map((item, index) => (
           <ResultItem key={index} item={item as any} />
         ))}
@@ -182,7 +182,9 @@ export const AutomatronHistory: FC<AutomatronHistory> = (props) => {
               key={index}
               className="border-t border-#454443 bg-#090807 p-2 first:border-t-0"
             >
-              <pre className="whitespace-pre-wrap font-mono">{item.text}</pre>
+              <pre className="whitespace-pre-wrap font-mono text-sm">
+                {item.text}
+              </pre>
             </div>
           )
         )}

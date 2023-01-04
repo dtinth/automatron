@@ -2,7 +2,7 @@
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.192.0/containers/codespaces-linux
 {
   "name": "GitHub Codespaces (Default)",
-  "image": "mcr.microsoft.com/vscode/devcontainers/universal:1-focal",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
   "containerEnv": {
     "GOOGLE_APPLICATION_CREDENTIALS": "/home/codespace/.google-cloud-service-account.json"
   },

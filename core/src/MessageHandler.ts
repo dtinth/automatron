@@ -3,6 +3,7 @@ import { addCronEntry } from './Cron'
 import { recordExpense } from './ExpenseTracking'
 import { sendHomeCommand } from './HomeAutomation'
 import { ImageMessageHandler } from './ImageMessageHandler'
+import { LanguageModelAssistantMessageHandler } from './LanguageModelAssistant'
 import {
   MessageHistoryMessageHandler,
   saveMessageHistory,
@@ -23,6 +24,7 @@ const messageHandlers = [
   MessageHistoryMessageHandler,
   SpendingTrackingMessageHandler,
   PhoneFinderMessageHandler,
+  LanguageModelAssistantMessageHandler,
 ]
 
 export async function handleTextMessage(

@@ -19,6 +19,7 @@ import { logger } from './logger'
 import { handleImage, handleTextMessage } from './MessageHandler'
 import { getMessageHistory } from './MessageHistory'
 import { handleNotification } from './NotificationProcessor'
+import { ref } from './PersistentState'
 import { deployPrelude } from './PreludeCode'
 import { createErrorMessage, SlackMessage } from './SlackMessageUtilities'
 import { handleSMS } from './SMSHandler'
@@ -242,6 +243,26 @@ app.get(
     return {
       speedDials: await getAllSpeedDials(context),
     }
+  })
+)
+
+app.options('/knobs', cors() as any)
+app.get(
+  '/knobs',
+  requireFirebaseAuth,
+  cors(),
+  endpoint(async (context, req) => {
+    logger.info({ ingest: 'knobs' }, 'Received a knobs API call')
+    const knobKeys = ((await ref(context, 'knobs').get()) as string).split(',')
+    const knobs = Object.fromEntries(
+      await Promise.all(
+        knobKeys.map(async (key) => {
+          const value = await ref(context, key).get()
+          return [key, value] as [string, string]
+        })
+      )
+    )
+    return { knobs }
   })
 )
 

@@ -53,13 +53,16 @@ class AutomatronBackend implements Backend {
   }
 
   async send(text: string): Promise<any> {
-    const url = (await this.getUrl()) + '/webpost-firebase'
-    const response = await axios.post(
-      url,
-      { text, source: 'web' },
-      { headers: await this.getHeaders() }
-    )
-    return response.data
+    const data = await this._post('/webpost-firebase', { text, source: 'web' })
+    if (typeof data.result === 'string') {
+      data.result = [
+        {
+          type: 'text',
+          text: data.result,
+        },
+      ]
+    }
+    return data
   }
 
   private async getHeaders() {
@@ -86,6 +89,13 @@ class AutomatronBackend implements Backend {
 
   async _get(url: string) {
     const response = await axios.get((await this.getUrl()) + url, {
+      headers: await this.getHeaders(),
+    })
+    return response.data
+  }
+
+  async _post(url: string, data: any) {
+    const response = await axios.post((await this.getUrl()) + url, data, {
       headers: await this.getHeaders(),
     })
     return response.data

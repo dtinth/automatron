@@ -7,18 +7,18 @@ importers:
 
   core:
     specifiers:
-      '@dtinth/encrypted': ^0.3.0
+      '@dtinth/encrypted': ^0.3.1
       '@google-cloud/firestore': ^5.0.2
       '@google-cloud/iot': ^2.5.1
-      '@google-cloud/storage': ^5.18.1
+      '@google-cloud/storage': ^5.20.5
       '@google-cloud/trace-agent': ^5.1.6
       '@google-cloud/vision': ^2.4.2
-      '@line/bot-sdk': ^7.4.0
-      '@slack/types': ^1.5.0
-      '@types/cors': ~2.8.12
-      '@types/express': ^4.17.0
-      '@types/jsonwebtoken': ^8.5.0
-      '@types/node': ^13.9.2
+      '@line/bot-sdk': ^7.5.2
+      '@slack/types': ^1.10.0
+      '@types/cors': ~2.8.13
+      '@types/express': ^4.17.15
+      '@types/jsonwebtoken': ^8.5.9
+      '@types/node': ^13.13.52
       '@vercel/ncc': ^0.36.0
       airtable: 0.5.9
       axios: 0.18.0
@@ -34,19 +34,19 @@ importers:
       jsonwebtoken: ^8.5.1
       lib: ~4.3.3
       livescript: 1.6.0
-      lodash: ^4.17.11
-      mongodb: ^4.3.1
+      lodash: ^4.17.21
+      mongodb: ^4.13.0
       mqtt: 2.18.8
-      nanoid: ~3.3.0
-      ora: ^3.2.0
-      pino: ^7.0.5
+      nanoid: ~3.3.4
+      ora: ^3.4.0
+      pino: ^7.11.0
       prelude-ls: 1.1.2
       transaction-parser-th: 0.1.1
       tweetnacl: ^1.0.3
       tweetnacl-sealedbox-js: ^1.2.0
-      typescript: ^4.3.2
-      verror: ^1.10.0
-      yargs: ^13.2.2
+      typescript: ^4.9.4
+      verror: ^1.10.1
+      yargs: ^13.3.2
     dependencies:
       '@dtinth/encrypted': 0.3.1
       '@google-cloud/firestore': 5.0.2
@@ -2771,7 +2771,7 @@ packages:
       continuation-local-storage: 3.2.1
       extend: 3.0.2
       gcp-metadata: 4.3.1
-      google-auth-library: 7.14.1
+      google-auth-library: 7.12.0
       hex2dec: 1.1.2
       is: 3.3.0
       methods: 1.1.2
@@ -6291,7 +6291,7 @@ packages:
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
       '@types/long': 4.0.2
-      '@types/node': 18.11.18
+      '@types/node': 16.18.11
       long: 4.0.0
     dev: false
 
@@ -6310,7 +6310,7 @@ packages:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.0
-      '@types/node': 18.11.18
+      '@types/node': 16.18.11
       long: 5.2.1
     dev: false
 

@@ -5,5 +5,5 @@
   "containerEnv": {
     "GOOGLE_APPLICATION_CREDENTIALS": "/home/codespace/.google-cloud-service-account.json"
   },
-  "postCreateCommand": "npm install --global @microsoft/rush && rush update && ./.devcontainer/postbuild"
+  "postCreateCommand": "pnpm install && ./.devcontainer/postbuild"
 }

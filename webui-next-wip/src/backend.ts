@@ -14,7 +14,7 @@ import axios from 'axios'
 const auth = getAuth(app)
 const firestore = getFirestore(app)
 
-class AutomatronBackend {
+class AutomatronBackend implements Backend {
   authStore = new SyncExternalStore<User | null | undefined>(undefined)
   private url?: string
 
@@ -69,27 +69,34 @@ class AutomatronBackend {
   }
 
   async getHistory(): Promise<any> {
-    const url = (await this.getUrl()) + '/history'
-    const response = await axios.get(url, { headers: await this.getHeaders() })
-    return response.data
+    return this._get('/history')
   }
 
   async getSpeedDials(): Promise<any> {
-    const url = (await this.getUrl()) + '/speed-dials'
-    const response = await axios.get(url, { headers: await this.getHeaders() })
-    return response.data
+    return this._get('/speed-dials')
+  }
+
+  async getKnobs(): Promise<Ok<{ knobs: Record<string, string> }>> {
+    return this._get('/knobs')
   }
 
   private async getIdToken() {
     return await auth.currentUser!.getIdToken()
   }
+
+  async _get(url: string) {
+    const response = await axios.get((await this.getUrl()) + url, {
+      headers: await this.getHeaders(),
+    })
+    return response.data
+  }
 }
 
-class FakeBackend {
-  authStore = new SyncExternalStore<{} | null | undefined>(null)
+class FakeBackend implements Backend {
+  authStore = new SyncExternalStore<User | null | undefined>(null)
 
   async signIn() {
-    this.authStore.state = {}
+    this.authStore.state = {} as User
   }
 
   async signOut() {
@@ -104,9 +111,25 @@ class FakeBackend {
     return { ok: true, result: { speedDials: [] } }
   }
 
+  async getKnobs(): Promise<Ok<{ knobs: Record<string, string> }>> {
+    return { ok: true, result: { knobs: {} } }
+  }
+
   async send(text: string): Promise<any> {
     return JSON.parse(text)
   }
+}
+
+type Ok<X> = { ok: true; result: X }
+
+interface Backend {
+  authStore: SyncExternalStore<User | null | undefined>
+  signIn(): Promise<void>
+  signOut(): Promise<void>
+  send(text: string): Promise<any>
+  getHistory(): Promise<any>
+  getSpeedDials(): Promise<any>
+  getKnobs(): Promise<Ok<{ knobs: Record<string, string> }>>
 }
 
 export const backend =

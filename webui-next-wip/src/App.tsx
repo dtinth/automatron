@@ -2,11 +2,17 @@ import { Icon } from '@iconify-icon/react'
 import running from '@iconify-icons/cil/running'
 import menu from '@iconify-icons/cil/menu'
 import x from '@iconify-icons/cil/x'
-import { useSyncExternalStore } from 'react'
+import { Fragment, useSyncExternalStore } from 'react'
 import { backend } from './backend'
 import { Clock } from './Clock'
 import { hashStore } from './hash'
 import { AutomatronConsole } from './AutomatronConsole'
+import { AutomatronKnobs } from './AutomatronKnobs'
+
+const viewMap = new Map([
+  ['automatron', AutomatronConsole],
+  ['knobs', AutomatronKnobs],
+])
 
 function App() {
   const authState = useSyncExternalStore(
@@ -14,7 +20,8 @@ function App() {
     backend.authStore.getSnapshot
   )
   const hash = useSyncExternalStore(hashStore.subscribe, hashStore.getSnapshot)
-  if (hash === '#automatron' && authState) {
+  const Component = viewMap.get(hash.slice(1))
+  if (Component && authState) {
     return (
       <>
         <FloatingButton
@@ -26,12 +33,25 @@ function App() {
           <Icon icon={x} />
         </FloatingButton>
         <div className="flex h-16 items-end px-2">
-          <div className="border-x border-t border-#454443 bg-#252423 px-2 py-1 text-sm text-#8b8685">
-            automatron
-          </div>
+          {Array.from(viewMap.keys()).map((key) => (
+            <Fragment key={key}>
+              {hash === `#${key}` ? (
+                <div className="border-x border-t border-#454443 bg-#252423 px-2 py-1 text-sm text-#8b8685">
+                  {key}
+                </div>
+              ) : (
+                <a
+                  href={`#${key}`}
+                  className="border-x border-t border-transparent px-2 py-1 text-sm text-#8b8685"
+                >
+                  {key}
+                </a>
+              )}
+            </Fragment>
+          ))}
         </div>
         <div className="-mt-px min-h-screen border-t border-t-#454443 bg-#252423 px-4 py-4">
-          <AutomatronConsole />
+          <Component />
         </div>
       </>
     )

@@ -9,9 +9,14 @@ import {
   TextMessageHandler,
 } from './types'
 
+type Role = 'system' | 'user' | 'assistant'
+interface ChatMessage {
+  role: Role
+  content: string
+}
 interface LlmHistoryEntry {
   time: string
-  context?: string
+  contextMessages?: ChatMessage[]
   inText: string
   outText: string
 }
@@ -43,6 +48,7 @@ export const LanguageModelAssistantMessageHandler: TextMessageHandler = (
       'Friday',
       'Saturday',
     ][nowIct.getDay()]
+
     const prompt: string[] = [
       // https://beta.openai.com/examples/default-chat
       'Current date and time: ' +
@@ -52,40 +58,32 @@ export const LanguageModelAssistantMessageHandler: TextMessageHandler = (
       'The following is a conversation with an AI assistant, automatron. ' +
         'The assistant is helpful, creative, clever, funny, and very friendly. ' +
         (await ref(context, 'llmPrompt').get()),
-      '',
     ]
-    prompt.push(
-      'Human: hi who are you?',
-      "automatron: hi. i'm automatron your friendly assistant! lmk what i can do for you\n"
-    )
-    const nextContext: string[] = []
-    if (continueFrom) {
-      if (continueFrom.context) {
-        nextContext.push(continueFrom.context)
-      }
-      nextContext.push('Human: ' + continueFrom.inText)
-      nextContext.push('automatron: ' + continueFrom.outText)
-    }
-    prompt.push(...nextContext)
-    prompt.push('Human: ' + inText)
-    prompt.push('automatron:')
-
+    const newContext: ChatMessage[] = [
+      ...(continueFrom
+        ? [
+            ...(continueFrom.contextMessages ?? []),
+            { role: 'user' as Role, content: continueFrom.inText },
+            { role: 'assistant' as Role, content: continueFrom.outText },
+          ]
+        : []),
+    ]
+    const messages: ChatMessage[] = [
+      { role: 'system', content: prompt.join('\n') },
+      ...newContext,
+      { role: 'user', content: inText },
+    ]
     const payload = {
-      model: 'text-davinci-003',
-      prompt: prompt.join('\n'),
-      temperature: 0.9,
-      max_tokens: 160,
-      top_p: 1,
-      frequency_penalty: 0,
-      presence_penalty: 0.6,
-      stop: ['Human:', 'automatron:'],
+      model: 'gpt-3.5-turbo',
+      messages,
+      temperature: +(await ref(context, 'llmTemperature').get()) || 0.7,
     }
     const response = await axios.post(
-      'https://api.openai.com/v1/completions',
+      'https://api.openai.com/v1/chat/completions',
       payload,
       { headers: { Authorization: `Bearer ${key}` } }
     )
-    const responseText = response.data.choices[0].text.trim()
+    const responseText = response.data.choices[0].message.content.trim()
     logger.info(
       { assistant: { prompt, response: response.data } },
       'Ran OpenAI assistant'
@@ -93,7 +91,7 @@ export const LanguageModelAssistantMessageHandler: TextMessageHandler = (
     const collection = await getCollection(context)
     await collection.insertOne({
       time: new Date().toISOString(),
-      context: nextContext.join('\n'),
+      contextMessages: newContext,
       inText,
       outText: responseText,
     })

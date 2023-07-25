@@ -1,11 +1,19 @@
 import { FlexMessage, TextMessage } from '@line/bot-sdk'
 import { BotSecrets } from './BotSecrets'
 import type { PluginTypes } from '@google-cloud/trace-agent'
+import { IncomingHttpHeaders } from 'http'
 
 export interface AutomatronContext {
   secrets: BotSecrets
+  requestInfo: HttpRequestInfo
   tracer?: PluginTypes.Tracer
   addPromise: (name: string, promise: Promise<any>) => void
+}
+
+export interface HttpRequestInfo {
+  ip: string
+  ips: string[]
+  headers: IncomingHttpHeaders
 }
 
 declare global {

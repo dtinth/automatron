@@ -27,11 +27,17 @@ import { getAllSpeedDials } from './SpeedDial'
 import { AutomatronContext } from './types'
 
 const app = express()
+app.set('trust proxy', true)
 
 function getAutomatronContext(req: Request, res: Response): AutomatronContext {
   return {
     secrets: req.env,
     tracer: req.tracer,
+    requestInfo: {
+      ip: req.ip,
+      ips: req.ips,
+      headers: req.headers,
+    },
     addPromise: (name, promise) => {
       if (!res.yields) res.yields = []
       res.yields.push(promise)

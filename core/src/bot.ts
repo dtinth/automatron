@@ -25,6 +25,7 @@ import { createErrorMessage, SlackMessage } from './SlackMessageUtilities'
 import { handleSMS } from './SMSHandler'
 import { getAllSpeedDials } from './SpeedDial'
 import { AutomatronContext } from './types'
+import { trackDevice } from './DeviceTracking'
 
 const app = express()
 app.set('trust proxy', true)
@@ -350,6 +351,8 @@ app.post(
         { ingest: 'notification', notification },
         'Received a notification from ' + notification.packageName
       )
+      const deviceId = String(req.query.deviceId ?? 'phone')
+      await trackDevice(context, deviceId, {})
       await Promise.all([
         axios.post(forwardingTarget, req.body, {
           headers: {
@@ -401,6 +404,23 @@ app.get(
       logError('Unable to process cron jobs', e)
       return 'Error: ' + e
     }
+  })
+)
+
+app.post(
+  '/mac/ping',
+  require('body-parser').json(),
+  requireApiKey,
+  endpoint(async (context, req, services) => {
+    const deviceId = req.body.deviceId
+    if (!deviceId) {
+      throw new Error('Missing deviceId')
+    }
+    const newState = await trackDevice(context, deviceId, {
+      locked: req.body.locked || null,
+      powerSource: req.body.powerSource,
+    })
+    return { newState }
   })
 )
 

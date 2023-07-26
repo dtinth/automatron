@@ -8,6 +8,7 @@ import { useRef, useState } from 'react'
 import { backend } from './backend'
 import { z } from 'zod'
 import clsx from 'clsx'
+import copy from '@iconify-icons/cil/copy'
 
 export interface AutomatronKnobs {}
 
@@ -35,7 +36,18 @@ export const AutomatronKnobs: FC<AutomatronKnobs> = (props) => {
       {Object.entries(knobs).map(([name, value]) => {
         return (
           <div>
-            <label className="block text-#8b8685">{name}</label>
+            <div className="flex gap-3">
+              <label className="block text-#8b8685">{name}</label>
+              <button
+                className="text-#8b8685"
+                onClick={() => {
+                  const code = `;;ref('${name}').set(${JSON.stringify(value)})`
+                  navigator.clipboard.writeText(code)
+                }}
+              >
+                <Icon icon={copy} />
+              </button>
+            </div>
             <input
               type="text"
               value={value}

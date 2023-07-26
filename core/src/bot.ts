@@ -25,7 +25,7 @@ import { createErrorMessage, SlackMessage } from './SlackMessageUtilities'
 import { handleSMS } from './SMSHandler'
 import { getAllSpeedDials } from './SpeedDial'
 import { AutomatronContext } from './types'
-import { trackDevice } from './DeviceTracking'
+import { checkDeviceOnlineStatus, trackDevice } from './DeviceTracking'
 
 const app = express()
 app.set('trust proxy', true)
@@ -370,6 +370,13 @@ app.post(
 app.get(
   '/cron',
   endpoint(async (context, req, services) => {
+    const otherTasks: Promise<any>[] = []
+    otherTasks.push(
+      (async () => {
+        await checkDeviceOnlineStatus(context)
+      })()
+    )
+
     const table = getCronTable(context)
     const pendingJobs = await table
       .select({ filterByFormula: 'NOT(Completed)' })
@@ -399,6 +406,7 @@ app.get(
         }
         await table.update(job.getId(), { Completed: true, Notes: result })
       }
+      await Promise.all(otherTasks)
       return 'All OK'
     } catch (e) {
       logError('Unable to process cron jobs', e)
@@ -419,6 +427,7 @@ app.post(
     const newState = await trackDevice(context, deviceId, {
       locked: req.body.locked || null,
       powerSource: req.body.powerSource,
+      online: true,
     })
     return { newState }
   })

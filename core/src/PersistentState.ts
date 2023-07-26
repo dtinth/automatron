@@ -50,7 +50,7 @@ async function get(context: AutomatronContext, key: string): Promise<any> {
 async function set(
   context: AutomatronContext,
   key: string,
-  value: string
+  value: any
 ): Promise<boolean> {
   const db = await getDb(context)
   const result = await trace(context, `set(${key})`, () =>

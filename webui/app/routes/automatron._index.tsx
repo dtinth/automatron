@@ -1,40 +1,66 @@
 import { Icon } from '@iconify-icon/react'
-import send from '@iconify-icons/cil/send'
-import history from '@iconify-icons/cil/history'
-import chevronRight from '@iconify-icons/cil/chevron-right'
 import chevronLeft from '@iconify-icons/cil/chevron-left'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { useRef, useState } from 'react'
-import { backend } from './backend'
-import { z } from 'zod'
+import chevronRight from '@iconify-icons/cil/chevron-right'
+import history from '@iconify-icons/cil/history'
+import send from '@iconify-icons/cil/send'
+import {
+  Await,
+  ClientActionFunctionArgs,
+  Form,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+} from '@remix-run/react'
 import clsx from 'clsx'
+import { ReactNode, Suspense, useState } from 'react'
+import { z } from 'zod'
+import { backend } from '~/backend'
+import { requireAuth } from '~/requireAuth'
 
-export interface AutomatronConsole {}
+export const clientLoader = async () => {
+  await requireAuth()
+  return {
+    speedDialsPromise: backend.getSpeedDials(),
+    historyPromise: backend.getHistory(),
+  }
+}
+
+export interface ActionResult {
+  result?: unknown
+  error?: unknown
+}
+
+export const clientAction = async (
+  args: ClientActionFunctionArgs
+): Promise<ActionResult> => {
+  await requireAuth()
+  const form = await args.request.formData()
+  const text = form.get('text')
+  const result = await backend.send(String(text))
+  try {
+    return { result } as ActionResult
+  } catch (error) {
+    return { error }
+  }
+}
 
 const classes = {
   button:
     'bg-bevel hover:border-#555453 block rounded border border-#454443 p-2 shadow-md shadow-black/50 active:border-#8b8685 flex flex-col items-center justify-center',
 }
 
-export const AutomatronConsole: FC<AutomatronConsole> = (props) => {
+export default function AutomatronConsole() {
+  const data = useLoaderData<typeof clientLoader>()
   const [speedDialEnabled, setSpeedDialEnabled] = useState(false)
   const [historyEnabled, setHistoryEnabled] = useState(false)
-  const sendMutation = useMutation({
-    mutationFn: async (text: string) => {
-      return backend.send(text)
-    },
-  })
-  const textarea = useRef<HTMLTextAreaElement>(null)
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    sendMutation.mutate(textarea.current!.value)
-  }
+  const { error, result } = useActionData<typeof clientAction>() ?? {}
+  const navigation = useNavigation()
+  const isSubmitting = navigation.state === 'submitting'
 
   return (
     <>
-      <form className="flex gap-2" onSubmit={handleSubmit}>
+      <Form className="flex gap-2" method="POST">
         <textarea
-          ref={textarea}
           name="text"
           className="bg-emboss hover:border-#555453 block w-full flex-1 rounded border border-#454443 py-1 px-2 font-mono placeholder-#8b8685 shadow-md shadow-black/50 focus:border-#656463 active:border-#8b8685"
           placeholder="Talk to automatron"
@@ -43,12 +69,12 @@ export const AutomatronConsole: FC<AutomatronConsole> = (props) => {
         <button
           className={clsx(classes.button, 'text-xl text-#8b8685')}
           type="submit"
-          disabled={sendMutation.isLoading}
           title="Send"
+          disabled={isSubmitting}
         >
           <Icon icon={send} />
         </button>
-      </form>
+      </Form>
       <div className="mt-2 flex gap-2">
         <button
           className={clsx(classes.button, 'text-lg text-#8b8685')}
@@ -63,32 +89,38 @@ export const AutomatronConsole: FC<AutomatronConsole> = (props) => {
           <Icon icon={speedDialEnabled ? chevronLeft : chevronRight} />
         </button>
         {speedDialEnabled && (
-          <SpeedDial
-            onRun={(id) => {
-              sendMutation.mutate(`;SD '${id}'`)
-            }}
-          />
+          <Suspense fallback={<div className="self-center">Loading...</div>}>
+            <Await resolve={data.speedDialsPromise}>
+              {(speedDials) => <SpeedDial speedDialData={speedDials} />}
+            </Await>
+          </Suspense>
         )}
       </div>
       {historyEnabled && (
         <div className="mt-4">
           <Panel title="History">
-            <AutomatronHistory />
+            <Suspense fallback={<div>Loading...</div>}>
+              <Await resolve={data.historyPromise}>
+                {(historyData) => (
+                  <AutomatronHistory historyData={historyData} />
+                )}
+              </Await>
+            </Suspense>
           </Panel>
         </div>
       )}
       <div className="mt-4">
-        {!!sendMutation.isLoading && (
+        {!!isSubmitting && (
           <pre className="whitespace-pre-wrap font-mono text-yellow-400">
             Sending...
           </pre>
         )}
-        {!!sendMutation.isError && (
+        {!!error && (
           <pre className="whitespace-pre-wrap font-mono text-red-300">
-            {String(sendMutation.error)}
+            {String(error)}
           </pre>
         )}
-        {!!sendMutation.data && <OutputViewer data={sendMutation.data} />}
+        {!!result && <OutputViewer data={result} />}
       </div>
     </>
   )
@@ -110,7 +142,7 @@ const OkResult = z.object({
   ),
 })
 
-export const OutputViewer: FC<OutputViewer> = (props) => {
+export function OutputViewer(props: OutputViewer) {
   const { data } = props
   const okResult = OkResult.safeParse(data)
   if (okResult.success) {
@@ -136,7 +168,7 @@ export interface ResultItem {
   item: ResultEntry
 }
 
-export const ResultItem: FC<ResultItem> = (props) => {
+export function ResultItem(props: ResultItem) {
   const { item } = props
   const children = (() => {
     switch (item.type) {
@@ -157,26 +189,14 @@ export const ResultItem: FC<ResultItem> = (props) => {
   )
 }
 
-export interface AutomatronHistory {}
-
-export const AutomatronHistory: FC<AutomatronHistory> = (props) => {
-  const query = useQuery({
-    queryKey: ['history'],
-    queryFn: async () => {
-      return backend.getHistory()
-    },
-    refetchOnMount: true,
-  })
-  if (query.isLoading) {
-    return <div>Loading...</div>
-  }
-  if (query.isError) {
-    return <div>Error: {String(query.error)}</div>
-  }
+export interface AutomatronHistory {
+  historyData: any
+}
+export function AutomatronHistory(props: AutomatronHistory) {
   return (
     <>
       <div className="flex flex-col">
-        {query.data.result.history.map(
+        {props.historyData.result.history.map(
           (item: { text: string }, index: number) => (
             <div
               key={index}
@@ -198,7 +218,7 @@ export interface Panel {
   children: ReactNode
 }
 
-export const Panel: FC<Panel> = (props) => {
+export function Panel(props: Panel) {
   return (
     <section className="overflow-hidden rounded border border-#454443 bg-#353433 shadow-md shadow-black/50">
       <h2 className="bg-glossy py-1 px-2 font-bold text-#8b8685">
@@ -210,32 +230,18 @@ export const Panel: FC<Panel> = (props) => {
 }
 
 export interface SpeedDial {
-  onRun: (id: string) => void
+  speedDialData: any
 }
-
-export const SpeedDial: FC<SpeedDial> = (props) => {
-  const query = useQuery({
-    queryKey: ['speedDials'],
-    queryFn: async () => {
-      return backend.getSpeedDials()
-    },
-  })
-  if (query.isLoading) {
-    return <div className="self-center">Loading...</div>
-  }
-  if (query.isError) {
-    return <div className="self-center">Error: {String(query.error)}</div>
-  }
+export function SpeedDial(props: SpeedDial) {
   return (
     <>
-      {query.data.result.speedDials.map((item: { _id: string }) => (
-        <button
-          key={item._id}
-          className={clsx(classes.button, 'py-0')}
-          onClick={() => props.onRun(item._id)}
-        >
-          {item._id}
-        </button>
+      {props.speedDialData.result.speedDials.map((item: { _id: string }) => (
+        <Form method="POST" key={item._id} className="flex m-0">
+          <input type="hidden" name="text" value={`;SD '${item._id}'`} />
+          <button className={clsx(classes.button, 'py-0')} type="submit">
+            {item._id}
+          </button>
+        </Form>
       ))}
     </>
   )

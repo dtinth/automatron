@@ -15,15 +15,19 @@ const auth = getAuth(app)
 const firestore = getFirestore(app)
 
 class AutomatronBackend implements Backend {
+  authReadyStatePromise: Promise<void>
   authStore = new SyncExternalStore<User | null | undefined>(undefined)
   private url?: string
 
   constructor() {
-    onAuthStateChanged(auth, (user) => {
-      this.authStore.state = user
-      if (user && !this.url) {
-        this.getUrl()
-      }
+    this.authReadyStatePromise = new Promise<void>((resolve) => {
+      onAuthStateChanged(auth, (user) => {
+        this.authStore.state = user
+        resolve()
+        if (user && !this.url) {
+          this.getUrl()
+        }
+      })
     })
   }
 
@@ -103,6 +107,7 @@ class AutomatronBackend implements Backend {
 }
 
 class FakeBackend implements Backend {
+  authReadyStatePromise: Promise<void> = Promise.resolve()
   authStore = new SyncExternalStore<User | null | undefined>(null)
 
   async signIn() {
@@ -133,6 +138,7 @@ class FakeBackend implements Backend {
 type Ok<X> = { ok: true; result: X }
 
 interface Backend {
+  authReadyStatePromise: Promise<void>
   authStore: SyncExternalStore<User | null | undefined>
   signIn(): Promise<void>
   signOut(): Promise<void>
@@ -143,8 +149,11 @@ interface Backend {
 }
 
 export const backend =
+  typeof location === 'undefined' ||
   new URLSearchParams(location.search).get('backend') === 'fake'
     ? new FakeBackend()
     : new AutomatronBackend()
 
-Object.assign(window, { backend })
+if (typeof window !== 'undefined') {
+  Object.assign(window, { backend })
+}

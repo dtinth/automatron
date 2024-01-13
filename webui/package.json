@@ -11,9 +11,11 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@fontsource/arimo": "^5.0.18",
     "@iconify-icon/react": "^1.0.8",
     "@iconify-icons/cil": "^1.2.4",
     "@nanostores/react": "^0.7.1",
+    "@playwright/test": "^1.40.1",
     "@remix-run/node": "^2.5.0",
     "@remix-run/react": "^2.5.0",
     "@remix-run/serve": "^2.5.0",

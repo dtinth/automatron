@@ -143,10 +143,13 @@ app.post(
   },
   endpoint(async (context, req, services) => {
     if (req.body.type === 'event_callback') {
-      let eventCache = global.automatronSlackEventCache
+      let globalScope = global as unknown as {
+        automatronSlackEventCache: Set<string>
+      }
+      let eventCache = globalScope.automatronSlackEventCache
       if (!eventCache) {
         eventCache = new Set()
-        global.automatronSlackEventCache = eventCache
+        globalScope.automatronSlackEventCache = eventCache
       }
       const eventId = req.body.event_id
       if (eventCache.has(eventId)) {
@@ -376,41 +379,43 @@ app.get(
         await checkDeviceOnlineStatus(context)
       })()
     )
+    await Promise.all(otherTasks)
 
-    const table = getCronTable(context)
-    const pendingJobs = await table
-      .select({ filterByFormula: 'NOT(Completed)' })
-      .all()
-    const jobsToRun = pendingJobs.filter(
-      (j) => new Date().toJSON() >= j.get('Scheduled time')
-    )
-    logger.trace('Number of pending cron jobs found: %s', jobsToRun.length)
-    try {
-      for (const job of jobsToRun) {
-        let result = 'No output'
-        const logContext = {
-          job: { id: job.getId(), name: job.get('Name') },
+    if (false) {
+      const table = getCronTable(context)
+      const pendingJobs = await table
+        .select({ filterByFormula: 'NOT(Completed)' })
+        .all()
+      const jobsToRun = pendingJobs.filter(
+        (j) => new Date().toJSON() >= j.get('Scheduled time')
+      )
+      logger.trace('Number of pending cron jobs found: %s', jobsToRun.length)
+      try {
+        for (const job of jobsToRun) {
+          let result = 'No output'
+          const logContext = {
+            job: { id: job.getId(), name: job.get('Name') },
+          }
+          try {
+            const reply = await handleTextMessage(context, job.get('Name'), {
+              source: 'cron:' + job.getId(),
+            })
+            result = require('util').inspect(reply)
+            logger.info(
+              { ...logContext, result },
+              `Done processing cron job: ${job.get('Name')}`
+            )
+          } catch (e) {
+            logError('Unable to process cron job', e, logContext)
+            result = `Error: ${e}`
+          }
+          await table.update(job.getId(), { Completed: true, Notes: result })
         }
-        try {
-          const reply = await handleTextMessage(context, job.get('Name'), {
-            source: 'cron:' + job.getId(),
-          })
-          result = require('util').inspect(reply)
-          logger.info(
-            { ...logContext, result },
-            `Done processing cron job: ${job.get('Name')}`
-          )
-        } catch (e) {
-          logError('Unable to process cron job', e, logContext)
-          result = `Error: ${e}`
-        }
-        await table.update(job.getId(), { Completed: true, Notes: result })
+        return 'All OK'
+      } catch (e) {
+        logError('Unable to process cron jobs', e)
+        return 'Error: ' + e
       }
-      await Promise.all(otherTasks)
-      return 'All OK'
-    } catch (e) {
-      logError('Unable to process cron jobs', e)
-      return 'Error: ' + e
     }
   })
 )

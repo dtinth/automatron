@@ -1,5 +1,5 @@
 import Encrypted from '@dtinth/encrypted'
-import { Client, MessageEvent, middleware, WebhookEvent } from '@line/bot-sdk'
+import { MessageEvent, middleware, WebhookEvent } from '@line/bot-sdk'
 import axios from 'axios'
 import cors from 'cors'
 import express, {
@@ -26,6 +26,7 @@ import { handleSMS } from './SMSHandler'
 import { getAllSpeedDials } from './SpeedDial'
 import { AutomatronContext } from './types'
 import { checkDeviceOnlineStatus, trackDevice } from './DeviceTracking'
+import { LINEClient } from './LINEClient'
 
 const app = express()
 app.set('trust proxy', true)
@@ -35,7 +36,7 @@ function getAutomatronContext(req: Request, res: Response): AutomatronContext {
     secrets: req.env,
     tracer: req.tracer,
     requestInfo: {
-      ip: req.ip,
+      ip: req.ip || '',
       ips: req.ips,
       headers: req.headers,
     },
@@ -65,7 +66,7 @@ async function runMiddleware(
 async function handleWebhook(
   context: AutomatronContext,
   events: WebhookEvent[],
-  client: Client
+  client: LINEClient
 ) {
   async function main() {
     for (const event of events) {
@@ -81,6 +82,9 @@ async function handleWebhook(
       await client.replyMessage(replyToken, toMessages('unauthorized'))
       return
     }
+    client.showLoadingAnimation(event.source.userId).catch((e) => {
+      logger.error({ err: e }, 'Unable to show loading animation')
+    })
     if (message.type === 'text') {
       const reply = await handleTextMessage(context, message.text, {
         source: 'line',
@@ -473,7 +477,7 @@ class Slack {
 }
 
 interface ThirdPartyServices {
-  line: Client
+  line: LINEClient
   slack: Slack
   auditSlack: Slack
 }
@@ -500,7 +504,7 @@ async function handleRequest(
   const context = getAutomatronContext(req, res)
   const encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
   const lineConfig = getLineConfig(req, res)
-  const lineClient = new Client(lineConfig)
+  const lineClient = new LINEClient(lineConfig)
   const slackClient = new Slack(context.secrets.SLACK_WEBHOOK_URL)
   const auditSlackClient = new Slack(
     encrypted(

@@ -1,4 +1,4 @@
-import { FlexMessage, TextMessage } from '@line/bot-sdk'
+import { FlexMessage, messagingApi, TextMessage } from '@line/bot-sdk'
 import { BotSecrets } from './BotSecrets'
 import type { PluginTypes } from '@google-cloud/trace-agent'
 import { IncomingHttpHeaders } from 'http'
@@ -37,10 +37,10 @@ export { FlexMessage, TextMessage } from '@line/bot-sdk'
 
 export type AutomatronResponse =
   | string
-  | TextMessage
-  | TextMessage[]
-  | FlexMessage
-  | FlexMessage[]
+  | messagingApi.TextMessage
+  | messagingApi.TextMessage[]
+  | messagingApi.FlexMessage
+  | messagingApi.FlexMessage[]
 
 export type TextMessageHandler = (
   text: string,

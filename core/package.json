@@ -18,11 +18,10 @@
   "dependencies": {
     "@dtinth/encrypted": "^0.3.1",
     "@google-cloud/firestore": "^5.0.2",
-    "@google-cloud/iot": "^2.5.1",
     "@google-cloud/storage": "^5.20.5",
     "@google-cloud/trace-agent": "^5.1.6",
     "@google-cloud/vision": "^2.4.2",
-    "@line/bot-sdk": "^7.5.2",
+    "@line/bot-sdk": "^9.2.2",
     "@slack/types": "^1.10.0",
     "@types/cors": "~2.8.13",
     "airtable": "0.5.9",

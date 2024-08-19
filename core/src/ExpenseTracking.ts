@@ -1,4 +1,4 @@
-import { FlexBox } from '@line/bot-sdk'
+import { FlexBox, messagingApi } from '@line/bot-sdk'
 import Airtable, { AirtableRecord } from 'airtable'
 import { AutomatronContext } from './types'
 import { createBubble } from './LINEMessageUtilities'
@@ -21,7 +21,7 @@ export async function recordExpense(
     },
     { typecast: true }
   )
-  const body: FlexBox = {
+  const body: messagingApi.FlexBox = {
     type: 'box',
     layout: 'vertical',
     contents: [

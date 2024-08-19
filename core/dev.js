@@ -26,7 +26,6 @@ require('yargs')
       ora.info('Running bundler.')
       const ncc = require('@vercel/ncc')(require.resolve('./src/bot.ts'), {
         externals: [
-          '@google-cloud/iot',
           '@google-cloud/firestore',
           '@google-cloud/storage',
           '@google-cloud/trace-agent',

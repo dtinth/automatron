@@ -74,9 +74,9 @@ export const LanguageModelAssistantMessageHandler: TextMessageHandler = (
       { role: 'user', content: inText },
     ]
     const payload = {
-      model: 'gpt-3.5-turbo',
+      model: 'chatgpt-4o-latest',
       messages,
-      temperature: +(await ref(context, 'llmTemperature').get()) || 0.7,
+      temperature: +(await ref(context, 'llmTemperature').get()) || 0.5,
     }
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',

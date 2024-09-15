@@ -9,11 +9,13 @@ import express, {
   Response,
 } from 'express'
 import handler from 'express-async-handler'
-import { auth as jwtAuth, claimEquals } from 'express-oauth2-jwt-bearer'
+import { claimEquals, auth as jwtAuth } from 'express-oauth2-jwt-bearer'
 import { Stream } from 'stream'
 import sealedbox from 'tweetnacl-sealedbox-js'
-import { getCronTable } from './Cron'
+import { getPendingCronJobs, updateCronJob } from './Cron'
 import { encrypt } from './DataEncryption'
+import { checkDeviceOnlineStatus, trackDevice } from './DeviceTracking'
+import { LINEClient } from './LINEClient'
 import { toMessages } from './LINEMessageUtilities'
 import { logger } from './logger'
 import { handleImage, handleTextMessage } from './MessageHandler'
@@ -25,8 +27,6 @@ import { createErrorMessage, SlackMessage } from './SlackMessageUtilities'
 import { handleSMS } from './SMSHandler'
 import { getAllSpeedDials } from './SpeedDial'
 import { AutomatronContext } from './types'
-import { checkDeviceOnlineStatus, trackDevice } from './DeviceTracking'
-import { LINEClient } from './LINEClient'
 
 const app = express()
 app.set('trust proxy', true)
@@ -385,41 +385,39 @@ app.get(
     )
     await Promise.all(otherTasks)
 
-    if (false) {
-      const table = getCronTable(context)
-      const pendingJobs = await table
-        .select({ filterByFormula: 'NOT(Completed)' })
-        .all()
-      const jobsToRun = pendingJobs.filter(
-        (j) => new Date().toJSON() >= j.get('Scheduled time')
-      )
-      logger.trace('Number of pending cron jobs found: %s', jobsToRun.length)
-      try {
-        for (const job of jobsToRun) {
-          let result = 'No output'
-          const logContext = {
-            job: { id: job.getId(), name: job.get('Name') },
-          }
-          try {
-            const reply = await handleTextMessage(context, job.get('Name'), {
-              source: 'cron:' + job.getId(),
-            })
-            result = require('util').inspect(reply)
-            logger.info(
-              { ...logContext, result },
-              `Done processing cron job: ${job.get('Name')}`
-            )
-          } catch (e) {
-            logError('Unable to process cron job', e, logContext)
-            result = `Error: ${e}`
-          }
-          await table.update(job.getId(), { Completed: true, Notes: result })
+    const pendingJobs = await getPendingCronJobs(context)
+    const jobsToRun = pendingJobs.filter(
+      (j) => new Date().toISOString() >= j.scheduledTime
+    )
+    logger.trace('Number of pending cron jobs found: %s', jobsToRun.length)
+    try {
+      for (const job of jobsToRun) {
+        let result = 'No output'
+        const logContext = {
+          job: { id: job._id.toString(), name: job.name },
         }
-        return 'All OK'
-      } catch (e) {
-        logError('Unable to process cron jobs', e)
-        return 'Error: ' + e
+        try {
+          const reply = await handleTextMessage(context, job.name, {
+            source: 'cron:' + job._id.toString(),
+          })
+          result = require('util').inspect(reply)
+          logger.info(
+            { ...logContext, result },
+            `Done processing cron job: ${job.name}`
+          )
+        } catch (e) {
+          logError('Unable to process cron job', e, logContext)
+          result = `Error: ${e}`
+        }
+        await updateCronJob(context, job._id.toString(), {
+          completed: true,
+          notes: result,
+        })
       }
+      return 'All OK'
+    } catch (e) {
+      logError('Unable to process cron jobs', e)
+      return 'Error: ' + e
     }
   })
 )

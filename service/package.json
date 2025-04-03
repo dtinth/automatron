@@ -28,7 +28,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --experimental-transform-types --env-file=.env --watch src/main.ts",
-    "start": "node --experimental-transform-types --env-file=.env src/main.ts",
+    "start": "node --experimental-transform-types src/main.ts",
     "node": "node --experimental-transform-types --env-file=.env"
   }
 }

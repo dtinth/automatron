@@ -16,3 +16,4 @@ common/autoinstallers/*/.npmrc
 
 # Heft
 .heft
+*.local

@@ -38,7 +38,7 @@ const line = new Elysia()
 
 const app = new Elysia({ adapter: node() })
   .use(createLogger())
-  .get('/', () => 'i am automatron')
+  .get('/', () => `i am automatron (revision: ${process.env.APP_REVISION || 'unknown'})`)
   .get('/recipient', () => getRecipient())
   .get('/config', async () => {
     console.log(await config.get('test'))

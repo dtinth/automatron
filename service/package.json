@@ -1,0 +1,34 @@
+{
+  "name": "@dtinth/automatron-service",
+  "private": true,
+  "description": "Personal assistant",
+  "version": "2.0.0",
+  "repository": "https://github.com/dtinth/automatron",
+  "dependencies": {
+    "@azure/data-tables": "^13.3.0",
+    "@azure/identity": "^4.8.0",
+    "@elysiajs/node": "^1.2.6",
+    "@line/bot-sdk": "^9.2.2",
+    "age-encryption": "^0.2.1",
+    "async-cache-dedupe": "^2.2.0",
+    "consola": "^3.4.2",
+    "elysia": "^1.2.25",
+    "ofetch": "^1.4.1",
+    "unstorage": "^1.15.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@tsconfig/node22": "^22.0.1",
+    "@types/node": "^22.14.0",
+    "@types/yargs": "^17.0.33",
+    "typescript": "^5.8.2",
+    "yaml": "^2.7.1",
+    "yargs": "^17.7.2"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "node --experimental-transform-types --env-file=.env --watch src/main.ts",
+    "start": "node --experimental-transform-types --env-file=.env src/main.ts",
+    "node": "node --experimental-transform-types --env-file=.env"
+  }
+}

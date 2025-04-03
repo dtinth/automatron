@@ -5,8 +5,8 @@ RUN corepack enable && pnpm install --frozen-lockfile
 COPY . .
 ENV NODE_ENV=production
 
-ARG APP_REVISION=unknown
-ENV APP_REVISION=${APP_REVISION}
+ARG COMMIT_HASH=unknown
+ENV COMMIT_HASH=${COMMIT_HASH}
 
 CMD ["pnpm", "start"]
 EXPOSE 29691

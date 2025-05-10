@@ -4,17 +4,32 @@ import {
   validateSignature,
   type WebhookRequestBody,
 } from '@line/bot-sdk'
+import { createCookieSessionStorage } from '@remix-run/node'
 import consola from 'consola'
-import { Elysia } from 'elysia'
+import { Elysia, t } from 'elysia'
+import * as client from 'openid-client'
+import { handleLINEMessage, sendLINEResponse } from './adapters/line.ts'
 import { Brain } from './brain.ts'
 import { config } from './config.ts'
+import { remixSession } from './elysiaPlugins/remixSession.ts'
 import { decryptText, getRecipient } from './encryption.ts'
 import { createLogger } from './logger.ts'
 import { registerCorePlugins } from './plugins/index.ts'
 import { storage } from './storage.ts'
-import { handleLINEMessage, sendLINEResponse } from './adapters/line.ts'
 
+const baseUrl = process.env.BASE_URL || 'http://localhost:29691'
 const signatureValidators = new WeakMap<Request, () => Promise<boolean>>()
+const sessionStorage = createCookieSessionStorage<{
+  user: client.IDToken
+  code_verifier: string
+}>({
+  cookie: {
+    name: 'automatron_session',
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    secrets: [process.env.AGE_SECRET_KEY!],
+  },
+})
 
 async function getLineConfig() {
   return {
@@ -56,7 +71,7 @@ const line = new Elysia()
     const payload = body as unknown as WebhookRequestBody
     const userId = await config.get('LINE_OWNER_USER_ID')
     const lineConfig = await getLineConfig()
-    
+
     for (const event of payload.events) {
       if (event.source.userId !== userId) {
         consola.warn(`User ID mismatch: ${event.source.userId} !== ${userId}`)
@@ -64,7 +79,7 @@ const line = new Elysia()
       }
       if (event.type === 'message') {
         const replyToken = event.replyToken
-        
+
         // Show loading animation
         const animationClient = new messagingApi.MessagingApiClient(lineConfig)
         animationClient
@@ -75,15 +90,15 @@ const line = new Elysia()
           .catch((err) => {
             consola.error('Error showing loading animation:', err)
           })
-        
+
         // Process message with platform-agnostic handler
         try {
           // Convert LINE message to generic format
           const genericMessage = await handleLINEMessage(event, lineConfig)
-          
+
           // Process with Brain
           const response = await brain.processMessage(genericMessage)
-          
+
           if (!response) {
             const client = new messagingApi.MessagingApiClient(lineConfig)
             await client.replyMessage({
@@ -97,12 +112,14 @@ const line = new Elysia()
             })
             continue
           }
-          
+
           // Send response back to LINE
           await sendLINEResponse(response, replyToken, lineConfig)
         } catch (error) {
           consola.error('Error handling message:', error)
-          const errorClient = new messagingApi.MessagingApiClient(await getLineConfig())
+          const errorClient = new messagingApi.MessagingApiClient(
+            await getLineConfig()
+          )
           await errorClient.replyMessage({
             replyToken,
             messages: [
@@ -118,7 +135,84 @@ const line = new Elysia()
     return 'ok'
   })
 
+const auth = new Elysia({ prefix: '/auth' })
+  .use(remixSession(sessionStorage))
+  .derive(async () => {
+    const oidcConfig = await client.discovery(
+      new URL((await config.get('OIDC_DISCOVERY_URL')) as string),
+      (await config.get('OIDC_CLIENT_ID')) as string
+    )
+    return { oidcConfig }
+  })
+  .get('/login', async ({ session, oidcConfig }) => {
+    const codeVerifier = client.randomPKCECodeVerifier()
+    const codeChallenge = await client.calculatePKCECodeChallenge(codeVerifier)
+    const redirectUri = baseUrl + '/auth/callback'
+    const url = client.buildAuthorizationUrl(oidcConfig, {
+      redirect_uri: redirectUri,
+      scope: 'openid profile email',
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
+      state: 'dummy',
+    })
+    session.set('code_verifier', codeVerifier)
+    return new Response('redirecting', {
+      status: 302,
+      headers: {
+        location: url.toString(),
+      },
+    })
+  })
+  .get(
+    '/callback',
+    async ({ session, oidcConfig, query, request }) => {
+      const codeVerifier = session.get('code_verifier')
+      if (!query.code || !codeVerifier) {
+        return new Response('Invalid request', { status: 400 })
+      }
+      const tokens = await client.authorizationCodeGrant(
+        oidcConfig,
+        new URL(request.url),
+        { pkceCodeVerifier: codeVerifier, expectedState: 'dummy' }
+      )
+      const claims = tokens.claims()
+      if (!claims) {
+        return new Response('Invalid token', { status: 400 })
+      }
+      session.set('user', claims)
+      return new Response('Login successful', {
+        status: 302,
+        headers: {
+          location: '/admin',
+        },
+      })
+    },
+    {
+      query: t.Object({
+        code: t.String(),
+      }),
+    }
+  )
+
+// Admin routes with authentication
+const admin = new Elysia({ prefix: '/admin' })
+  .use(remixSession(sessionStorage))
+  .get('/', ({ session }) => {
+    if (!session.has('user')) {
+      return new Response('Unauthorized', {
+        status: 302,
+        headers: { location: '/auth/login' },
+      })
+    }
+    const user = session.get('user')!
+    console.log(user)
+    return 'meow'
+  })
+
 const app = new Elysia({ adapter: node() })
+  .onError(({ error }) => {
+    consola.error('An error occurred:', error)
+  })
   .use(createLogger())
   .get(
     '/',
@@ -130,7 +224,10 @@ const app = new Elysia({ adapter: node() })
     await storage.setItem('test', 'it works!')
     return 'ok'
   })
+  .use(remixSession(sessionStorage))
   .use(line)
+  .use(auth)
+  .use(admin)
   .listen(29691, ({ hostname, port }) => {
     console.log(`🦊 Elysia is running at ${hostname}:${port}`)
   })

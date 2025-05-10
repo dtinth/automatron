@@ -71,52 +71,91 @@ export interface RunAgentResult {
   finished: boolean
 }
 
+export interface RunAgentIterationResult {
+  messagesToAddToHistory: CoreMessage[]
+  finished: boolean
+}
+
+// Function to run a single iteration of the agentic loop
+export async function runIteration(
+  messages: CoreMessage[]
+): Promise<RunAgentIterationResult> {
+  if (messages.length === 0) {
+    return {
+      messagesToAddToHistory: [],
+      finished: true,
+    }
+  }
+
+  const lastMessage = messages[messages.length - 1]
+  const messagesToAddToHistory: CoreMessage[] = []
+
+  // Case 1: Last message is from agent
+  if (lastMessage.role === 'assistant') {
+    const toolCalls = extractToolCalls([lastMessage])
+
+    // If the assistant message has tool calls, run them
+    if (toolCalls.length > 0) {
+      const toolResultParts = await processToolCalls(toolCalls)
+
+      if (toolResultParts.length > 0) {
+        const toolMessage: CoreMessage = {
+          role: 'tool',
+          content: toolResultParts,
+        }
+        messagesToAddToHistory.push(toolMessage)
+
+        return {
+          messagesToAddToHistory,
+          finished: false, // Not finished, continue with more iterations
+        }
+      }
+    }
+
+    // If no tool calls or something unexpected, we're finished
+    return {
+      messagesToAddToHistory,
+      finished: true,
+    }
+  }
+  // Case 2: Last message is from user or tool, run the model
+  else if (lastMessage.role === 'user' || lastMessage.role === 'tool') {
+    console.log('Running model…')
+    const result = await runModel(messages)
+
+    // Add the model's response messages to our message list
+    messagesToAddToHistory.push(...result.response.messages)
+
+    return {
+      messagesToAddToHistory,
+      finished: false, // Not finished, continue with more iterations
+    }
+  }
+
+  // Default case (shouldn't reach here in normal operation)
+  consola.warn('Unexpected message role:', lastMessage.role)
+  return {
+    messagesToAddToHistory: [],
+    finished: true,
+  }
+}
+
 export async function runAgent(
   messages: CoreMessage[]
 ): Promise<RunAgentResult> {
   const allMessages = [...messages]
-
-  // Inner function to run a single iteration of the agentic loop
-  async function runIteration(): Promise<boolean> {
-    console.log('Running model…')
-    const result = await runModel(allMessages)
-
-    // Add the model's response messages to our message list
-    for (const message of result.response.messages) {
-      allMessages.push(message)
-    }
-
-    // Extract tool calls from messages
-    const toolCalls = extractToolCalls(result.response.messages)
-
-    // If no tool calls, the agent is done
-    if (toolCalls.length === 0) {
-      return false
-    }
-
-    // Process all tool calls and get results
-    const toolResultParts = await processToolCalls(toolCalls)
-
-    // Add tool results to messages
-    if (toolResultParts.length > 0) {
-      allMessages.push({
-        role: 'tool',
-        content: toolResultParts,
-      })
-
-      // Continue the loop
-      return true
-    }
-
-    // If we reach here, something unexpected happened
-    return false
-  }
-
-  // Run the agent loop until it's finished
   let iterations = 0
   const MAX_ITERATIONS = 20
+  let finished = false
 
-  while (iterations < MAX_ITERATIONS && (await runIteration())) {
+  while (iterations < MAX_ITERATIONS && !finished) {
+    const iterationResult = await runIteration(allMessages)
+
+    // Add new messages to history
+    allMessages.push(...iterationResult.messagesToAddToHistory)
+
+    // Check if we're done
+    finished = iterationResult.finished
     iterations++
   }
 
@@ -219,6 +258,17 @@ You are not allowed to make any assumptions about the user or their tasks.
 You should always ask for clarification if you are unsure about something.
 You should also be polite and respectful to the user at all times.
 </agent_instructions>
+
+<training_protocol>
+The user may ask you to update the agent instructions.
+When asked, you should present the updated instructions inside a tag wrapped in a fenced code block, like this:
+\`\`\`
+<agent_instructions>
+[updated instructions]
+</agent_instructions>
+\`\`\`
+The user may also ask you to update the training protocol, which you should be able to do in a similar way.
+</training_protocol>
 
 <user_message_time>${new Date().toISOString()}</user_message_time>
 ${input.text}

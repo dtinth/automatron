@@ -4,11 +4,11 @@ import {
   validateSignature,
   type WebhookRequestBody,
 } from '@line/bot-sdk'
-import { createCookieSessionStorage } from '@remix-run/node'
 import consola from 'consola'
 import { Elysia, t } from 'elysia'
 import * as client from 'openid-client'
 import { handleLINEMessage, sendLINEResponse } from './adapters/line.ts'
+import { admin } from './admin/index.ts'
 import { Brain } from './brain.ts'
 import { config } from './config.ts'
 import { remixSession } from './elysiaPlugins/remixSession.ts'
@@ -16,20 +16,7 @@ import { decryptText, getRecipient } from './encryption.ts'
 import { createLogger } from './logger.ts'
 import { registerCorePlugins } from './plugins/index.ts'
 import { storage } from './storage.ts'
-
-const baseUrl = process.env.BASE_URL || 'http://localhost:29691'
-const signatureValidators = new WeakMap<Request, () => Promise<boolean>>()
-const sessionStorage = createCookieSessionStorage<{
-  user: client.IDToken
-  code_verifier: string
-}>({
-  cookie: {
-    name: 'automatron_session',
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    secrets: [process.env.AGE_SECRET_KEY!],
-  },
-})
+import { baseUrl, sessionStorage, signatureValidators } from './web.ts'
 
 async function getLineConfig() {
   return {
@@ -195,21 +182,6 @@ const auth = new Elysia({ prefix: '/auth' })
       }),
     }
   )
-
-// Admin routes with authentication
-const admin = new Elysia({ prefix: '/admin' })
-  .use(remixSession(sessionStorage))
-  .get('/', ({ session }) => {
-    if (!session.has('user')) {
-      return new Response('Unauthorized', {
-        status: 302,
-        headers: { location: '/auth/login' },
-      })
-    }
-    const user = session.get('user')!
-    console.log(user)
-    return 'meow'
-  })
 
 const app = new Elysia({ adapter: node() })
   .onError(({ error }) => {

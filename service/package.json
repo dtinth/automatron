@@ -5,6 +5,7 @@
   "version": "2.0.0",
   "repository": "https://github.com/dtinth/automatron",
   "dependencies": {
+    "@ai-sdk/google": "^1.2.17",
     "@azure/data-tables": "^13.3.0",
     "@azure/identity": "^4.8.0",
     "@azure/storage-blob": "^12.17.0",
@@ -12,14 +13,18 @@
     "@line/bot-sdk": "^9.2.2",
     "@remix-run/node": "^2.16.6",
     "age-encryption": "^0.2.1",
+    "ai": "^4.3.15",
     "async-cache-dedupe": "^2.2.0",
     "consola": "^3.4.2",
     "elysia": "^1.2.25",
     "jose": "^6.0.11",
     "ofetch": "^1.4.1",
     "openid-client": "^6.5.0",
+    "p-lazy": "^5.0.0",
+    "p-memoize": "^7.1.1",
     "unstorage": "^1.15.0",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.1",

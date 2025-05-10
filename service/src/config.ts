@@ -7,7 +7,7 @@ class Config {
     'fetchConfigValue',
     async (key: string) => {
       const value = storage.get(key)
-      consola.debug('Refreshed config value for:', key)
+      consola.info('Refreshed config value for:', key)
       return value
     }
   )

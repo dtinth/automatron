@@ -170,9 +170,11 @@ const auth = new Elysia({ prefix: '/auth' })
       if (!query.code || !codeVerifier) {
         return new Response('Invalid request', { status: 400 })
       }
+      const redirectUri = new URL(baseUrl + '/auth/callback')
+      redirectUri.search = new URL(request.url).search
       const tokens = await client.authorizationCodeGrant(
         oidcConfig,
-        new URL(request.url),
+        redirectUri,
         { pkceCodeVerifier: codeVerifier, expectedState: 'dummy' }
       )
       const claims = tokens.claims()

@@ -113,7 +113,18 @@ export async function runAgent(
   }
 
   // Run the agent loop until it's finished
-  while (await runIteration()) {}
+  let iterations = 0
+  const MAX_ITERATIONS = 20
+
+  while (iterations < MAX_ITERATIONS && (await runIteration())) {
+    iterations++
+  }
+
+  if (iterations >= MAX_ITERATIONS) {
+    consola.warn(
+      `Reached maximum of ${MAX_ITERATIONS} iterations, stopping agent loop`
+    )
+  }
 
   // Return only the new messages
   return {

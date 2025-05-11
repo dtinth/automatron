@@ -82,28 +82,32 @@ export async function runModel(messages: CoreMessage[]) {
   return result
 }
 
-export interface RunAgentResult {
+export interface VirtaAgentState {
   messages: CoreMessage[]
+}
+
+export interface RunAgentResult {
+  nextState: VirtaAgentState
   finished: boolean
 }
 
 export interface RunAgentIterationResult {
-  messagesToAddToHistory: CoreMessage[]
+  nextState: VirtaAgentState
   finished: boolean
 }
 
 // Function to run a single iteration of the agentic loop
 export async function runIteration(
-  messages: CoreMessage[]
+  state: VirtaAgentState
 ): Promise<RunAgentIterationResult> {
-  if (messages.length === 0) {
+  if (state.messages.length === 0) {
     return {
-      messagesToAddToHistory: [],
+      nextState: { ...state },
       finished: true,
     }
   }
 
-  const lastMessage = messages[messages.length - 1]
+  const lastMessage = state.messages[state.messages.length - 1]
   const messagesToAddToHistory: CoreMessage[] = []
 
   // Case 1: Last message is from agent
@@ -122,7 +126,10 @@ export async function runIteration(
         messagesToAddToHistory.push(toolMessage)
 
         return {
-          messagesToAddToHistory,
+          nextState: {
+            ...state,
+            messages: [...state.messages, ...messagesToAddToHistory],
+          },
           finished: false, // Not finished, continue with more iterations
         }
       }
@@ -130,20 +137,23 @@ export async function runIteration(
 
     // If no tool calls or something unexpected, we're finished
     return {
-      messagesToAddToHistory,
+      nextState: { ...state },
       finished: true,
     }
   }
   // Case 2: Last message is from user or tool, run the model
   else if (lastMessage.role === 'user' || lastMessage.role === 'tool') {
     console.log('Running model…')
-    const result = await runModel(messages)
+    const result = await runModel(state.messages)
 
     // Add the model's response messages to our message list
     messagesToAddToHistory.push(...result.response.messages)
 
     return {
-      messagesToAddToHistory,
+      nextState: {
+        ...state,
+        messages: [...state.messages, ...messagesToAddToHistory],
+      },
       finished: false, // Not finished, continue with more iterations
     }
   }
@@ -151,24 +161,24 @@ export async function runIteration(
   // Default case (shouldn't reach here in normal operation)
   consola.warn('Unexpected message role:', lastMessage.role)
   return {
-    messagesToAddToHistory: [],
+    nextState: { ...state },
     finished: true,
   }
 }
 
 export async function runAgent(
-  messages: CoreMessage[]
+  initialState: VirtaAgentState
 ): Promise<RunAgentResult> {
-  const allMessages = [...messages]
+  let currentState = { ...initialState }
   let iterations = 0
   const MAX_ITERATIONS = 20
   let finished = false
 
   while (iterations < MAX_ITERATIONS && !finished) {
-    const iterationResult = await runIteration(allMessages)
+    const iterationResult = await runIteration(currentState)
 
-    // Add new messages to history
-    allMessages.push(...iterationResult.messagesToAddToHistory)
+    // Update state with the result of this iteration
+    currentState = iterationResult.nextState
 
     // Check if we're done
     finished = iterationResult.finished
@@ -181,9 +191,9 @@ export async function runAgent(
     )
   }
 
-  // Return only the new messages
+  // Return the final state
   return {
-    messages: allMessages.slice(messages.length),
+    nextState: currentState,
     finished: true,
   }
 }
@@ -263,7 +273,7 @@ export interface VirtaTextInput {
   text: string
 }
 
-export function createNewThread(input: VirtaTextInput): CoreMessage[] {
+export function createNewThread(input: VirtaTextInput): VirtaAgentState {
   const initialPrompt = `
 
 <agent_instructions>
@@ -327,30 +337,36 @@ The goal of this training protocol is to improve the agent's performance over ti
 <user_message_time>${formatDate(new Date())}</user_message_time>
 ${input.text}
 `.trim()
-  return [
-    {
-      role: 'user',
-      content: [{ type: 'text', text: initialPrompt }],
-    },
-  ]
+
+  return {
+    messages: [
+      {
+        role: 'user',
+        content: [{ type: 'text', text: initialPrompt }],
+      },
+    ]
+  }
 }
 
 export function continueThread(
-  previousMessages: CoreMessage[],
+  state: VirtaAgentState,
   newUserMessage: string
-): CoreMessage[] {
+): VirtaAgentState {
   // Format the new user message
   const formattedMessage = `
 <user_message_time>${formatDate(new Date())}</user_message_time>
 ${newUserMessage}
 `.trim()
 
-  // Add the new user message to the conversation and return the updated array
-  return [
-    ...previousMessages,
-    {
-      role: 'user',
-      content: [{ type: 'text', text: formattedMessage }],
-    },
-  ]
+  // Add the new user message to the conversation and return the updated state
+  return {
+    ...state,
+    messages: [
+      ...state.messages,
+      {
+        role: 'user',
+        content: [{ type: 'text', text: formattedMessage }],
+      },
+    ]
+  }
 }

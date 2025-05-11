@@ -3,38 +3,38 @@ import { type CoreMessage } from 'ai'
 import { Elysia } from 'elysia'
 import { createHash } from 'node:crypto'
 import { Readable } from 'node:stream'
-import { continueThread, createNewThread, runAgent } from '../agent/index.ts'
+import { continueThread, createNewThread, runAgent, type VirtaAgentState } from '../agent/index.ts'
 import { blobService } from '../blob.ts'
 import { htmlPlugin } from '../elysiaPlugins/html.ts'
 import { adminUserPlugin } from './adminUserPlugin.ts'
 import { layout } from './layout.ts'
 
-// Function to retrieve chat messages
-export async function retrieveChatMessages(
+// Function to retrieve agent state
+export async function retrieveAgentState(
   hash: string
-): Promise<CoreMessage[] | null> {
+): Promise<VirtaAgentState | null> {
   try {
-    const blobKey = `chat/${hash}.json`
+    const blobKey = `chat/state/${hash}.json`
     const blob = await blobService.getBlobClient('ephemeral', blobKey)
     if (!blob) {
       return null
     }
     const buffer = await blob.downloadToBuffer()
-    const messages = JSON.parse(buffer.toString('utf-8'))
-    return messages
+    const state = JSON.parse(buffer.toString('utf-8'))
+    return state
   } catch (error) {
-    console.error('Failed to retrieve chat messages:', error)
+    console.error('Failed to retrieve agent state:', error)
     return null
   }
 }
 
-// Function to save chat messages
-export async function saveChatMessages(
-  messages: CoreMessage[]
+// Function to save agent state
+export async function saveAgentState(
+  state: VirtaAgentState
 ): Promise<string> {
-  const buffer = Buffer.from(JSON.stringify(messages), 'utf-8')
+  const buffer = Buffer.from(JSON.stringify(state), 'utf-8')
   const hash = createHash('sha256').update(buffer).digest('hex')
-  const blobKey = `chat/${hash}.json`
+  const blobKey = `chat/state/${hash}.json`
   await blobService.uploadStream(
     'ephemeral',
     blobKey,
@@ -45,10 +45,10 @@ export async function saveChatMessages(
 }
 
 // Function to render chat messages
-function renderChatMessages(messages: CoreMessage[]): Html[] {
+function renderChatMessages(state: VirtaAgentState): Html[] {
   const result: Html[] = []
 
-  for (const message of messages) {
+  for (const message of state.messages) {
     const messageClass =
       message.role === 'user'
         ? 'user-message'
@@ -202,29 +202,29 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
     const message = String(formData.get('message'))
     const parentHash = formData.get('parentHash')
 
-    let allMessages: CoreMessage[] = []
+    let state: VirtaAgentState
 
     if (parentHash) {
-      const previousMessages = await retrieveChatMessages(String(parentHash))
-      if (previousMessages) {
+      const previousState = await retrieveAgentState(String(parentHash))
+      if (previousState) {
         // Continue existing conversation
-        const updatedMessages = continueThread(previousMessages, message)
-        const result = await runAgent(updatedMessages)
-        allMessages = [...updatedMessages, ...result.messages]
+        const updatedState = continueThread(previousState, message)
+        const result = await runAgent(updatedState)
+        state = result.nextState
       } else {
-        // If parent messages not found, start new thread
-        const previousMessages = createNewThread({ text: message })
-        const result = await runAgent(previousMessages)
-        allMessages = [...previousMessages, ...result.messages]
+        // If parent state not found, start new thread
+        const newState = createNewThread({ text: message })
+        const result = await runAgent(newState)
+        state = result.nextState
       }
     } else {
       // Start new thread
-      const previousMessages = createNewThread({ text: message })
-      const result = await runAgent(previousMessages)
-      allMessages = [...previousMessages, ...result.messages]
+      const newState = createNewThread({ text: message })
+      const result = await runAgent(newState)
+      state = result.nextState
     }
 
-    const hash = await saveChatMessages(allMessages)
+    const hash = await saveAgentState(state)
 
     return new Response('Redirect', {
       status: 302,
@@ -235,9 +235,9 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
   })
   .get('/:hash', async ({ user, params }) => {
     const hash = params.hash
-    const messages = await retrieveChatMessages(hash)
+    const state = await retrieveAgentState(hash)
 
-    if (!messages) {
+    if (!state) {
       return new Response('Not found', { status: 404 })
     }
 
@@ -246,7 +246,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       contents: html`
         <div class="chat-page">
           <h1>Chat</h1>
-          <div class="chat-messages">${renderChatMessages(messages)}</div>
+          <div class="chat-messages">${renderChatMessages(state)}</div>
           <form method="POST" action="/admin/chat">
             <input type="hidden" name="parentHash" value="${hash}" />
             <textarea

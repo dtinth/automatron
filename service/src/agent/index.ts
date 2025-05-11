@@ -68,22 +68,85 @@ const mcpPromise = PLazy.from(async () => {
   return { mcpClient, toolDefinititions, toolImplementations }
 })
 
-export async function runModel(messages: CoreMessage[]) {
+// Helper function to create model invocation log entry
+function createModelInvocationLogEntry(
+  startedAt: string,
+  result: Awaited<ReturnType<typeof generateText>>,
+  completedAt: string
+): ModelInvocationLogEntry {
+  return {
+    type: 'model-invocation',
+    timestamp: startedAt,
+    startedAt,
+    completedAt,
+    finishReason: result.finishReason,
+    providerMetadata: result.providerMetadata,
+    usage: result.usage,
+    modelId: result.response.modelId,
+  }
+}
+
+export async function runModel(messages: CoreMessage[], existingLogEntries: AnyLogEntry[] = []) {
   const model = await getModel()
   const mcp = await mcpPromise
-  const result = await generateText({
-    model,
-    messages,
-    tools: mcp.toolDefinititions,
-  })
-  for (const message of result.response.messages) {
-    console.dir(message, { depth: null })
+  const startedAt = new Date().toISOString()
+
+  let result;
+  try {
+    result = await generateText({
+      model,
+      messages,
+      tools: mcp.toolDefinititions,
+    })
+
+    for (const message of result.response.messages) {
+      console.dir(message, { depth: null })
+    }
+  } catch (error) {
+    // Create a simple error log entry for failed model invocation
+    const logEntry: LogEntry = {
+      type: 'model-error',
+      timestamp: startedAt,
+      error: String(error)
+    }
+
+    // Return the error and log entry
+    throw { error, logEntry }
   }
-  return result
+
+  // Create log entry for successful model invocation
+  const completedAt = new Date().toISOString()
+  const logEntry = createModelInvocationLogEntry(startedAt, result, completedAt)
+
+  // Return both the result and the log entry
+  return { result, logEntry }
 }
+
+export interface LogEntry {
+  type: string
+  timestamp: string // ISO timestamp
+  [key: string]: any // Allow additional properties
+}
+
+export interface ModelInvocationLogEntry extends LogEntry {
+  type: 'model-invocation'
+  startedAt: string // ISO timestamp
+  completedAt?: string // ISO timestamp
+  finishReason?: string
+  providerMetadata?: any
+  usage?: {
+    promptTokens: number
+    completionTokens: number
+    totalTokens: number
+  }
+  modelId?: string
+}
+
+export type AnyLogEntry = ModelInvocationLogEntry | LogEntry
 
 export interface VirtaAgentState {
   messages: CoreMessage[]
+  logEntries: AnyLogEntry[]
 }
 
 export interface RunAgentResult {
@@ -109,6 +172,7 @@ export async function runIteration(
 
   const lastMessage = state.messages[state.messages.length - 1]
   const messagesToAddToHistory: CoreMessage[] = []
+  const logEntries = [...(state.logEntries || [])]
 
   // Case 1: Last message is from agent
   if (lastMessage.role === 'assistant') {
@@ -116,6 +180,13 @@ export async function runIteration(
 
     // If the assistant message has tool calls, run them
     if (toolCalls.length > 0) {
+      // Create a log entry for tool calls
+      const toolCallLogEntry: LogEntry = {
+        type: 'tool-calls',
+        timestamp: new Date().toISOString(),
+      }
+      logEntries.push(toolCallLogEntry)
+
       const toolResultParts = await processToolCalls(toolCalls)
 
       if (toolResultParts.length > 0) {
@@ -129,6 +200,7 @@ export async function runIteration(
           nextState: {
             ...state,
             messages: [...state.messages, ...messagesToAddToHistory],
+            logEntries,
           },
           finished: false, // Not finished, continue with more iterations
         }
@@ -137,31 +209,61 @@ export async function runIteration(
 
     // If no tool calls or something unexpected, we're finished
     return {
-      nextState: { ...state },
+      nextState: {
+        ...state,
+        logEntries,
+      },
       finished: true,
     }
   }
   // Case 2: Last message is from user or tool, run the model
   else if (lastMessage.role === 'user' || lastMessage.role === 'tool') {
     console.log('Running model…')
-    const result = await runModel(state.messages)
 
-    // Add the model's response messages to our message list
-    messagesToAddToHistory.push(...result.response.messages)
+    try {
+      const { result, logEntry } = await runModel(state.messages)
 
-    return {
-      nextState: {
-        ...state,
-        messages: [...state.messages, ...messagesToAddToHistory],
-      },
-      finished: false, // Not finished, continue with more iterations
+      // Add the model invocation log entry
+      logEntries.push(logEntry)
+
+      // Add the model's response messages to our message list
+      messagesToAddToHistory.push(...result.response.messages)
+
+      return {
+        nextState: {
+          ...state,
+          messages: [...state.messages, ...messagesToAddToHistory],
+          logEntries,
+        },
+        finished: false, // Not finished, continue with more iterations
+      }
+    } catch (err: any) {
+      if (err.logEntry) {
+        // Add the error log entry
+        logEntries.push(err.logEntry)
+      }
+
+      // Log the error
+      consola.error('Error running model:', err.error || err)
+
+      // Return state with error
+      return {
+        nextState: {
+          ...state,
+          logEntries,
+        },
+        finished: true, // Finish due to error
+      }
     }
   }
 
   // Default case (shouldn't reach here in normal operation)
   consola.warn('Unexpected message role:', lastMessage.role)
   return {
-    nextState: { ...state },
+    nextState: {
+      ...state,
+      logEntries,
+    },
     finished: true,
   }
 }
@@ -338,13 +440,20 @@ The goal of this training protocol is to improve the agent's performance over ti
 ${input.text}
 `.trim()
 
+  // Create a thread creation log entry
+  const threadCreationLogEntry: LogEntry = {
+    type: 'thread-creation',
+    timestamp: new Date().toISOString(),
+  }
+
   return {
     messages: [
       {
         role: 'user',
         content: [{ type: 'text', text: initialPrompt }],
       },
-    ]
+    ],
+    logEntries: [threadCreationLogEntry]
   }
 }
 
@@ -358,6 +467,12 @@ export function continueThread(
 ${newUserMessage}
 `.trim()
 
+  // Create a message addition log entry
+  const messageAdditionLogEntry: LogEntry = {
+    type: 'message-addition',
+    timestamp: new Date().toISOString(),
+  }
+
   // Add the new user message to the conversation and return the updated state
   return {
     ...state,
@@ -367,6 +482,10 @@ ${newUserMessage}
         role: 'user',
         content: [{ type: 'text', text: formattedMessage }],
       },
+    ],
+    logEntries: [
+      ...(state.logEntries || []),
+      messageAdditionLogEntry
     ]
   }
 }

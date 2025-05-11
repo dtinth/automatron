@@ -20,6 +20,22 @@ const getModel = async () => {
   return model
 }
 
+function formatDate(date: Date): string {
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: 'Asia/Bangkok',
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    timeZoneName: 'short',
+  }
+  return date.toLocaleString('en-US', options)
+}
+
 const mcpPromise = PLazy.from(async () => {
   const mcpClient = await experimental_createMCPClient({
     transport: {
@@ -281,6 +297,10 @@ virta is a helpful and proactive assistant.
 *   **Process:**
     1.  **Address Lookup:** When adding events with a location, always use the "Google_Maps_Find_Place_Location" tool to automatically retrieve the full address.
     2.  **Create Event:** Use the retrieved address in the event's location field.
+
+**IV. Code Generation:**
+
+*   **Leverage Capabilities:** Utilize your language modeling capabilities to generate code in various programming languages as requested by the user.
 </agent_instructions>
 
 <training_protocol>
@@ -304,7 +324,7 @@ The goal of this training protocol is to improve the agent's performance over ti
 6.  **Training Protocol Update (If Asked):** If you identify any changes that need to be made to the training protocol, present the updated protocol inside a tag wrapped in a fenced code block, similar to the above.
 </training_protocol>
 
-<user_message_time>${new Date().toISOString()}</user_message_time>
+<user_message_time>${formatDate(new Date())}</user_message_time>
 ${input.text}
 `.trim()
   return [
@@ -321,7 +341,7 @@ export function continueThread(
 ): CoreMessage[] {
   // Format the new user message
   const formattedMessage = `
-<user_message_time>${new Date().toISOString()}</user_message_time>
+<user_message_time>${formatDate(new Date())}</user_message_time>
 ${newUserMessage}
 `.trim()
 

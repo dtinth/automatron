@@ -37,9 +37,15 @@ The agent system uses a stateful architecture with `VirtaAgentState` at its core
 - **Plugin System**: Add new features by creating plugins in `/src/plugins` directory
 - **Storage**: Azure Table Storage for configuration management
 - **Blob Storage**: Azure Blob Storage for media files and chat history
+  - Use `BlobSASPermissions` class from `@azure/storage-blob` for SAS URLs
+  - Chat states stored as JSON at `chat/state/<hash>.json`
 - **Authentication**: OpenID Connect-based authentication for admin access
 - **Agent**: AI-powered agent using Google Gemini models and tools
 - **VirtaAgentState**: Stateful agent architecture that preserves context and logs agent activity
+- **Admin Interface**:
+  - Dashboard at `/admin` with navigation to features
+  - Chat interface at `/admin/chat` for interacting with the AI assistant
+  - Uses layout template with Bootstrap 5 and custom BEM-styled components
 
 ## Code Style Guidelines
 
@@ -54,6 +60,12 @@ The agent system uses a stateful architecture with `VirtaAgentState` at its core
 - **Type Definitions**: Define shared types in appropriate interface files
 - **State Management**: Use immutable patterns when updating state objects
 - **Logging**: Include structured log entries in VirtaAgentState for tracking operations
+- **CSS Guidelines**:
+  - Use Bootstrap 5 classes for common components when available
+  - For custom CSS, follow BEM methodology with capitalized Block names (e.g., `Message`, `Tool`)
+  - Elements use double underscores: `Message__header`
+  - Modifiers use double hyphens: `Message--user`
+  - Extract shared styles to reusable variables to avoid duplication
 
 ## Authentication and Security
 

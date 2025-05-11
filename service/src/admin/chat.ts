@@ -9,6 +9,73 @@ import { htmlPlugin } from '../elysiaPlugins/html.ts'
 import { adminUserPlugin } from './adminUserPlugin.ts'
 import { layout } from './layout.ts'
 
+// Shared styles for chat pages
+const styles = html`<style>
+  .chat-page {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .chat-messages {
+    margin-bottom: 20px;
+  }
+  .Message {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+  }
+  .Message--user {
+    background-color: #e6f7ff;
+    border-left: 4px solid #1890ff;
+  }
+  .Message--assistant {
+    background-color: #f6ffed;
+    border-left: 4px solid #52c41a;
+  }
+  .Message--tool {
+    background-color: #fff7e6;
+    border-left: 4px solid #faad14;
+  }
+  .Message__header {
+    font-weight: bold;
+    margin-bottom: 5px;
+    text-transform: capitalize;
+  }
+  .Message__content {
+    margin: 0;
+  }
+  .text-content {
+    white-space: pre-wrap;
+  }
+  .Tool {
+    margin: 6px 0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .Tool summary {
+    padding: 6px 10px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  .Tool--call summary {
+    background-color: #e6f7ff;
+  }
+  .Tool--result summary {
+    background-color: #f6ffed;
+  }
+  .Tool--error summary {
+    background-color: #fff1f0;
+    color: #cf1322;
+  }
+  .Tool__args,
+  .Tool__result-content {
+    margin: 0;
+    padding: 10px;
+    background-color: #f5f5f5;
+    overflow: auto;
+    max-height: 300px;
+  }
+</style>`
+
 // Function to retrieve agent state
 export async function retrieveAgentState(
   hash: string
@@ -122,10 +189,10 @@ function renderChatMessages(state: VirtaAgentState): Html[] {
   for (const message of state.messages) {
     const messageClass =
       message.role === 'user'
-        ? 'user-message'
+        ? 'Message Message--user'
         : message.role === 'assistant'
-        ? 'assistant-message'
-        : 'tool-message'
+        ? 'Message Message--assistant'
+        : 'Message Message--tool'
 
     let contentParts: Html[] = []
 
@@ -139,21 +206,21 @@ function renderChatMessages(state: VirtaAgentState): Html[] {
           )
         } else if (part.type === 'tool-call') {
           contentParts.push(html`
-            <details class="tool-call">
+            <details class="Tool Tool--call">
               <summary>Tool Call: ${part.toolName}</summary>
-              <pre class="tool-args">${JSON.stringify(part.args, null, 2)}</pre>
+              <pre class="Tool__args">${JSON.stringify(part.args, null, 2)}</pre>
             </details>
           `)
         } else if (part.type === 'tool-result') {
           const resultClass = part.isError
-            ? 'tool-result tool-error'
-            : 'tool-result'
+            ? 'Tool Tool--result Tool--error'
+            : 'Tool Tool--result'
           contentParts.push(html`
             <details class="${resultClass}">
               <summary>
                 Tool Result: ${part.toolName}${part.isError ? ' (Error)' : ''}
               </summary>
-              <pre class="tool-result-content">
+              <pre class="Tool__result-content">
 ${JSON.stringify(part.result, null, 2)}</pre
               >
             </details>
@@ -168,8 +235,8 @@ ${JSON.stringify(part.result, null, 2)}</pre
 
     result.push(html`
       <div class="${messageClass}">
-        <div class="message-header">${message.role}</div>
-        <div class="message-content">${contentParts}</div>
+        <div class="Message__header">${message.role}</div>
+        <div class="Message__content">${contentParts}</div>
       </div>
     `)
   }
@@ -199,72 +266,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
             <button type="submit" class="btn btn-primary mt-2">Send</button>
           </form>
         </div>
-        <style>
-          .chat-page {
-            max-width: 800px;
-            margin: 0 auto;
-          }
-          .user-message,
-          .assistant-message,
-          .tool-message {
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-          }
-          .user-message {
-            background-color: #e6f7ff;
-            border-left: 4px solid #1890ff;
-          }
-          .assistant-message {
-            background-color: #f6ffed;
-            border-left: 4px solid #52c41a;
-          }
-          .tool-message {
-            background-color: #fff7e6;
-            border-left: 4px solid #faad14;
-          }
-          .message-header {
-            font-weight: bold;
-            margin-bottom: 5px;
-            text-transform: capitalize;
-          }
-          .message-content {
-            margin: 0;
-          }
-          .text-content {
-            white-space: pre-wrap;
-          }
-          .tool-call,
-          .tool-result {
-            margin: 6px 0;
-            border-radius: 4px;
-            overflow: hidden;
-          }
-          .tool-call summary,
-          .tool-result summary {
-            padding: 6px 10px;
-            cursor: pointer;
-            font-weight: bold;
-          }
-          .tool-call summary {
-            background-color: #e6f7ff;
-          }
-          .tool-result summary {
-            background-color: #f6ffed;
-          }
-          .tool-error summary {
-            background-color: #fff1f0;
-            color: #cf1322;
-          }
-          .tool-args,
-          .tool-result-content {
-            margin: 0;
-            padding: 10px;
-            background-color: #f5f5f5;
-            overflow: auto;
-            max-height: 300px;
-          }
-        </style>
+        ${styles}
       `,
     })
   })
@@ -386,75 +388,7 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
             </button>
           </form>
         </div>
-        <style>
-          .chat-page {
-            max-width: 800px;
-            margin: 0 auto;
-          }
-          .chat-messages {
-            margin-bottom: 20px;
-          }
-          .user-message,
-          .assistant-message,
-          .tool-message {
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-          }
-          .user-message {
-            background-color: #e6f7ff;
-            border-left: 4px solid #1890ff;
-          }
-          .assistant-message {
-            background-color: #f6ffed;
-            border-left: 4px solid #52c41a;
-          }
-          .tool-message {
-            background-color: #fff7e6;
-            border-left: 4px solid #faad14;
-          }
-          .message-header {
-            font-weight: bold;
-            margin-bottom: 5px;
-            text-transform: capitalize;
-          }
-          .message-content {
-            margin: 0;
-          }
-          .text-content {
-            white-space: pre-wrap;
-          }
-          .tool-call,
-          .tool-result {
-            margin: 6px 0;
-            border-radius: 4px;
-            overflow: hidden;
-          }
-          .tool-call summary,
-          .tool-result summary {
-            padding: 6px 10px;
-            cursor: pointer;
-            font-weight: bold;
-          }
-          .tool-call summary {
-            background-color: #e6f7ff;
-          }
-          .tool-result summary {
-            background-color: #f6ffed;
-          }
-          .tool-error summary {
-            background-color: #fff1f0;
-            color: #cf1322;
-          }
-          .tool-args,
-          .tool-result-content {
-            margin: 0;
-            padding: 10px;
-            background-color: #f5f5f5;
-            overflow: auto;
-            max-height: 300px;
-          }
-        </style>
+        ${styles}
       `,
     })
   })

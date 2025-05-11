@@ -1,4 +1,4 @@
-import { BlobServiceClient, BlockBlobClient } from '@azure/storage-blob'
+import { BlobServiceClient, BlockBlobClient, BlobSASPermissions } from '@azure/storage-blob'
 import { Readable } from 'stream'
 import { azureStorageConnectionString } from './storage.ts'
 
@@ -90,8 +90,11 @@ export class BlobService {
     expiresOn.setMinutes(expiresOn.getMinutes() + expiresInMinutes)
 
     // Create signed URL with read permissions
+    const permissions = new BlobSASPermissions()
+    permissions.read = true
+
     const signedUrl = await blobClient.generateSasUrl({
-      permissions: 'r', // Read permission
+      permissions,
       expiresOn,
       contentType: 'application/json',
     })

@@ -70,6 +70,34 @@ export class BlobService {
     const containerClient = blobServiceClient.getContainerClient(containerName)
     return containerClient.getBlockBlobClient(blobName)
   }
+
+  /**
+   * Creates a signed URL for the specified blob with read access
+   * @param containerName The container name
+   * @param blobName The blob name
+   * @param expiresInMinutes How long the URL will be valid in minutes (default: 60)
+   * @returns The signed URL
+   */
+  async getSignedUrl(
+    containerName: string,
+    blobName: string,
+    expiresInMinutes: number = 60
+  ): Promise<string> {
+    const blobClient = await this.getBlobClient(containerName, blobName)
+
+    // Set expiry time
+    const expiresOn = new Date()
+    expiresOn.setMinutes(expiresOn.getMinutes() + expiresInMinutes)
+
+    // Create signed URL with read permissions
+    const signedUrl = await blobClient.generateSasUrl({
+      permissions: 'r', // Read permission
+      expiresOn,
+      contentType: 'application/json',
+    })
+
+    return signedUrl
+  }
 }
 
 // Export a singleton instance

@@ -3,7 +3,7 @@ import { type CoreMessage } from 'ai'
 import { Elysia } from 'elysia'
 import { createHash } from 'node:crypto'
 import { Readable } from 'node:stream'
-import { continueThread, createNewThread, runAgent, type VirtaAgentState } from '../agent/index.ts'
+import { continueThread, createNewThread, runAgent, type VirtaAgentState, type ModelInvocationLogEntry } from '../agent/index.ts'
 import { blobService } from '../blob.ts'
 import { htmlPlugin } from '../elysiaPlugins/html.ts'
 import { adminUserPlugin } from './adminUserPlugin.ts'
@@ -42,6 +42,77 @@ export async function saveAgentState(
     'application/json'
   )
   return hash
+}
+
+/**
+ * Calculate total token usage from all model invocations
+ */
+function calculateTokenUsage(state: VirtaAgentState): {
+  promptTokens: number
+  completionTokens: number
+  totalTokens: number
+  costUSD: number
+  costTHB: number
+} {
+  // Use static constants to ensure consistent values
+  return calculateTokenUsage.calculateUsage(state)
+}
+
+// Define static properties and methods
+calculateTokenUsage.PROMPT_PRICE_PER_MILLION = 0.15
+calculateTokenUsage.COMPLETION_PRICE_PER_MILLION = 0.6
+calculateTokenUsage.USD_TO_THB = 35
+
+calculateTokenUsage.calculateUsage = function(state: VirtaAgentState) {
+  // Price per million tokens in USD and exchange rate
+  const PROMPT_PRICE_PER_MILLION = calculateTokenUsage.PROMPT_PRICE_PER_MILLION
+  const COMPLETION_PRICE_PER_MILLION = calculateTokenUsage.COMPLETION_PRICE_PER_MILLION
+  const USD_TO_THB = calculateTokenUsage.USD_TO_THB
+
+  const result = {
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTokens: 0,
+    costUSD: 0,
+    costTHB: 0
+  }
+
+  // Filter log entries for model invocations
+  const modelInvocations = state.logEntries.filter(
+    entry => entry.type === 'model-invocation'
+  ) as ModelInvocationLogEntry[]
+
+  // Sum up token usage
+  for (const entry of modelInvocations) {
+    if (entry.usage) {
+      result.promptTokens += entry.usage.promptTokens || 0
+      result.completionTokens += entry.usage.completionTokens || 0
+      result.totalTokens += entry.usage.totalTokens || 0
+    }
+  }
+
+  // Calculate costs
+  result.costUSD = (
+    (result.promptTokens / 1000000) * PROMPT_PRICE_PER_MILLION +
+    (result.completionTokens / 1000000) * COMPLETION_PRICE_PER_MILLION
+  )
+  result.costTHB = result.costUSD * USD_TO_THB
+
+  return result
+}
+
+/**
+ * Generate a signed URL for viewing the JSON state
+ */
+async function getStateJsonUrl(hash: string): Promise<string> {
+  const blobKey = `chat/state/${hash}.json`
+  try {
+    // Create a signed URL valid for 60 minutes
+    return await blobService.getSignedUrl('ephemeral', blobKey, 60)
+  } catch (error) {
+    console.error('Failed to generate signed URL:', error)
+    return '#'
+  }
 }
 
 // Function to render chat messages
@@ -241,23 +312,78 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
       return new Response('Not found', { status: 404 })
     }
 
+    // Calculate token usage
+    const tokenUsage = calculateTokenUsage(state)
+
+    // Generate signed URL for JSON state
+    const jsonUrl = await getStateJsonUrl(hash)
+
     return layout({
       title: 'Chat',
       contents: html`
         <div class="chat-page">
           <h1>Chat</h1>
-          <div class="chat-messages">${renderChatMessages(state)}</div>
+
+          <div class="card mb-4">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-8">
+                  <h5 class="card-title">Token Usage Summary</h5>
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th>Tokens</th>
+                        <th>Cost (THB)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Prompt</td>
+                        <td>${tokenUsage.promptTokens.toLocaleString()}</td>
+                        <td>฿${((tokenUsage.promptTokens / 1000000) *
+                          calculateTokenUsage.PROMPT_PRICE_PER_MILLION *
+                          calculateTokenUsage.USD_TO_THB).toFixed(2)}</td>
+                      </tr>
+                      <tr>
+                        <td>Completion</td>
+                        <td>${tokenUsage.completionTokens.toLocaleString()}</td>
+                        <td>฿${((tokenUsage.completionTokens / 1000000) *
+                          calculateTokenUsage.COMPLETION_PRICE_PER_MILLION *
+                          calculateTokenUsage.USD_TO_THB).toFixed(2)}</td>
+                      </tr>
+                      <tr class="table-active fw-bold">
+                        <td>Total</td>
+                        <td>${tokenUsage.totalTokens.toLocaleString()}</td>
+                        <td>฿${tokenUsage.costTHB.toFixed(2)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="col-md-4 d-flex align-items-center justify-content-md-end mt-3 mt-md-0">
+                  <a href="${jsonUrl}" target="_blank" class="btn btn-outline-secondary">
+                    <iconify-icon icon="mdi:json" inline class="me-1"></iconify-icon>
+                    View Raw JSON
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-messages mb-4">${renderChatMessages(state)}</div>
           <form method="POST" action="/admin/chat">
             <input type="hidden" name="parentHash" value="${hash}" />
             <textarea
               name="message"
               rows="5"
-              cols="50"
-              class="form-control"
+              class="form-control mb-2"
               placeholder="Continue the conversation..."
               autofocus
             ></textarea>
-            <button type="submit" class="btn btn-primary mt-2">Send</button>
+            <button type="submit" class="btn btn-primary">
+              <iconify-icon icon="mdi:send" inline class="me-1"></iconify-icon>
+              Send
+            </button>
           </form>
         </div>
         <style>

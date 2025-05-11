@@ -1,4 +1,7 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import {
+  createGoogleGenerativeAI,
+  type GoogleGenerativeAIProviderOptions,
+} from '@ai-sdk/google'
 import {
   experimental_createMCPClient,
   generateText,
@@ -17,7 +20,7 @@ const getModel = async () => {
   const google = createGoogleGenerativeAI({
     apiKey: await decryptText((await config.get('GEMINI_API_KEY')) as string),
   })
-  const model = google('gemini-2.0-flash-001')
+  const model = google('gemini-2.5-flash-preview-04-17')
   return model
 }
 
@@ -101,6 +104,11 @@ export async function runModel(
       model,
       messages,
       tools: mcp.toolDefinititions,
+      providerOptions: {
+        google: {
+          thinkingConfig: { thinkingBudget: 0 },
+        } satisfies GoogleGenerativeAIProviderOptions,
+      },
     })
 
     for (const message of result.response.messages) {

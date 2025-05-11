@@ -390,13 +390,9 @@ export interface VirtaTextInput {
 export function createNewThread(input: VirtaTextInput): VirtaAgentState {
   const initialPrompt = `
 
-<agent_instructions>
 ${agentInstructions}
-</agent_instructions>
 
-<training_protocol>
 ${trainingProtocol}
-</training_protocol>
 
 <user_message_time>${formatDate(new Date())}</user_message_time>
 ${input.text}

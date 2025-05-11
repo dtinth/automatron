@@ -2,6 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Agent State Architecture
+
+The agent system uses a stateful architecture with `VirtaAgentState` at its core:
+
+- **State Object**: Contains messages history and log entries
+- **Immutable Updates**: Each operation returns a new state object
+- **Log Entries**: Tracks model invocations, tool usage, and errors
+- **Performance Metrics**: Records token usage and execution times
+- **Storage**: Uses structured JSON stored in blob storage at `chat/state/<hash>.json`
+- **Type Safety**: Ensures consistency and reliability through TypeScript interfaces
+
 ## Build and Development Commands
 
 - `pnpm dev` - Start service in development mode with auto-reload
@@ -28,6 +39,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Blob Storage**: Azure Blob Storage for media files and chat history
 - **Authentication**: OpenID Connect-based authentication for admin access
 - **Agent**: AI-powered agent using Google Gemini models and tools
+- **VirtaAgentState**: Stateful agent architecture that preserves context and logs agent activity
 
 ## Code Style Guidelines
 
@@ -40,6 +52,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Media Handling**: Upload files to Azure Blob Storage via the blob service
 - **Modules**: Keep related functionality in dedicated modules (plugins, adapters, etc.)
 - **Type Definitions**: Define shared types in appropriate interface files
+- **State Management**: Use immutable patterns when updating state objects
+- **Logging**: Include structured log entries in VirtaAgentState for tracking operations
 
 ## Authentication and Security
 

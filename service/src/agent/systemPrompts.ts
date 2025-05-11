@@ -64,3 +64,20 @@ The goal of this training protocol is to improve the agent's performance over ti
 6. Training Protocol Update (If Asked): If you identify any changes that need to be made to the training protocol, present the updated protocol inside a tag wrapped in a fenced code block, similar to the above. The training protocol should also be in plain text.
 </training_protocol>
 `
+
+export const summarizeInstructions = `
+<system_message>
+The conversation with the user has ended.
+Please summarize the conversation to not more than 1000 words and present the result like this:
+
+\`\`\`
+<conversation_summary>
+- [summary of the conversation as a plain text list, totaling not more than 1000 words]
+</conversation_summary>
+\`\`\`
+
+In your next conversation, the previous conversation summary will be presented at the beginning of the next conversation. Include all the necessary details so that you and the user can pick up where you left off.
+
+IMPORTANT: Do not use any tool. Just write the conversation summary as in the above example.
+</system_message>
+`.trim()

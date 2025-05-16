@@ -341,7 +341,7 @@ app.post(
   endpoint(async (context, req, services) => {
     try {
       const encrypted = Encrypted(context.secrets.ENCRYPTION_SECRET)
-      const { publicKey, secretKey, forwardingTarget } = encrypted(`
+      const { publicKey, secretKey } = encrypted(`
         BpnjVPJcwkInfE/lPxxcl6E11BlDNh3v.KoCet77F7KC4pvuhRySH2wNP1AjYpUGVcHQSqhc
         rbFTDHUsXDaYjF/Jc584uh7Bd6yLl0a4scdEsX7EhxuHXUknD4bA8AXxkJe/OhI3EbmfleP5
         ByVNvvvxqScM9pHvCy/bURK33REznhvW0MsscwgRGsqMxvI7Km9RpxpglexWANMlrkuVBJbC
@@ -360,14 +360,7 @@ app.post(
       )
       const deviceId = String(req.query.deviceId ?? 'phone')
       await trackDevice(context, deviceId, {})
-      await Promise.all([
-        axios.post(forwardingTarget, req.body, {
-          headers: {
-            'Content-Type': 'text/plain',
-          },
-        }),
-        handleNotification(context, notification),
-      ])
+      await handleNotification(context, notification)
     } catch (err) {
       logger.error({ err, data: req.body }, 'Unable to process notification')
     }

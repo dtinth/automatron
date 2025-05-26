@@ -9,9 +9,11 @@ import {
   type ToolCallPart,
   type ToolExecutionOptions,
   type ToolResultPart,
+  type Tool,
+  // MCPClient import removed as it's not exported; will use ReturnType instead
 } from 'ai'
 import consola from 'consola'
-import PLazy from 'p-lazy'
+// PLazy import removed as it's no longer used
 import { config } from '../config.ts'
 import { decryptText } from '../encryption.ts'
 import { agentInstructions, trainingProtocol } from './systemPrompts.ts'
@@ -40,38 +42,6 @@ function formatDate(date: Date): string {
   return date.toLocaleString('en-US', options)
 }
 
-const mcpPromise = PLazy.from(async () => {
-  const mcpClient = await experimental_createMCPClient({
-    transport: {
-      type: 'sse',
-      url: (await config.get('VIRTA_MCP_URL')) as string,
-      headers: {
-        authorization: `Bearer ${await decryptText(
-          (await config.get('VIRTA_MCP_BEARER_TOKEN')) as string
-        )}`,
-      },
-    },
-  })
-  const toolDefinititions = Object.fromEntries(
-    Object.entries(await mcpClient.tools()).map(
-      ([name, { execute, ...definition }]) => [name, { ...definition }]
-    )
-  )
-  const toolImplementations = Object.fromEntries(
-    Object.entries(await mcpClient.tools()).map(([name, { execute }]) => [
-      name,
-      async (args: any, options: ToolExecutionOptions) => {
-        const result = await execute(args, options)
-        return {
-          isError: false,
-          result,
-        }
-      },
-    ])
-  )
-  return { mcpClient, toolDefinititions, toolImplementations }
-})
-
 // Helper function to create model invocation log entry
 function createModelInvocationLogEntry(
   startedAt: string,
@@ -90,12 +60,82 @@ function createModelInvocationLogEntry(
   }
 }
 
+// Define specific types for tool definitions and implementations
+// ToolDefinitionsMap will be Record<string, Tool<any, any>> as generateText expects ToolSet = Record<string, Tool<any, any>>
+// and the 'execute' property on Tool is optional.
+type ToolDefinitionsMap = Record<string, Tool<any, any>>
+type ToolImplementationsMap = Record<
+  string,
+  (
+    args: any,
+    options: ToolExecutionOptions
+  ) => Promise<{ isError: boolean; result: any }>
+>
+
+// Define a type alias for the MCPClient Promise and its resolved type
+type MCPClientPromiseType = ReturnType<typeof experimental_createMCPClient>
+type ActualMCPClientType = Awaited<MCPClientPromiseType>
+
+// Define the MCPContextType interface
+interface MCPContextType {
+  mcpClient: ActualMCPClientType // Use the resolved client type
+  toolDefinititions: ToolDefinitionsMap
+  toolImplementations: ToolImplementationsMap
+}
+
+// Private helper function to create MCP context
+async function _createMCPContext(): Promise<MCPContextType> {
+  const mcpClient: ActualMCPClientType = await experimental_createMCPClient({ // mcpClient is the resolved client object here
+    transport: {
+      type: 'sse',
+      url: (await config.get('VIRTA_MCP_URL')) as string,
+      headers: {
+        authorization: `Bearer ${await decryptText(
+          (await config.get('VIRTA_MCP_BEARER_TOKEN')) as string
+        )}`,
+      },
+    },
+  })
+  const toolDefinititions: ToolDefinitionsMap = Object.fromEntries(
+    Object.entries(await mcpClient.tools()).map( // Corrected: mcpClient is not a promise here, mcpClient.tools() is
+      ([name, toolEntry]: [string, any]) => {
+        const { execute, ...definitionPart } = toolEntry
+        return [name, definitionPart as Tool<any, any>]
+      }
+    )
+  )
+  const toolImplementations: ToolImplementationsMap = Object.fromEntries(
+    Object.entries(await mcpClient.tools()).map(([name, toolEntry]: [string, any]) => { // Corrected: mcpClient.tools() is a promise
+      const { execute } = toolEntry; // toolEntry here is ToolExecution which has execute
+      return [
+        name,
+        async (args: any, options: ToolExecutionOptions) => {
+          // Ensure execute is a function before calling
+          if (typeof execute === 'function') {
+            const result = await execute(args, options)
+            return {
+              isError: false,
+              result // Comma removed here
+            }
+          }
+          // Handle cases where execute might not be a function (though MCP implies it should be)
+          return {
+            isError: true,
+            result: `Tool ${name} does not have a valid execute method.`,
+          }
+        },
+      ]
+    })
+  )
+  return { mcpClient, toolDefinititions, toolImplementations } // Corrected: mcpClient is not a promise here
+}
+
 export async function runModel(
   messages: CoreMessage[],
-  existingLogEntries: AnyLogEntry[] = []
+  existingLogEntries: AnyLogEntry[] = [],
+  toolDefinititions: ToolDefinitionsMap
 ) {
   const model = await getModel()
-  const mcp = await mcpPromise
   const startedAt = new Date().toISOString()
 
   let result
@@ -103,7 +143,7 @@ export async function runModel(
     result = await generateText({
       model,
       messages,
-      tools: mcp.toolDefinititions,
+      tools: toolDefinititions, // Use passed toolDefinititions
       providerOptions: {
         google: {
           thinkingConfig: { thinkingBudget: 0 },
@@ -173,7 +213,9 @@ export interface RunAgentIterationResult {
 
 // Function to run a single iteration of the agentic loop
 export async function runIteration(
-  state: VirtaAgentState
+  state: VirtaAgentState,
+  toolDefinititions: ToolDefinitionsMap,
+  toolImplementations: ToolImplementationsMap
 ): Promise<RunAgentIterationResult> {
   if (state.messages.length === 0) {
     return {
@@ -199,7 +241,7 @@ export async function runIteration(
       }
       logEntries.push(toolCallLogEntry)
 
-      const toolResultParts = await processToolCalls(toolCalls)
+      const toolResultParts = await processToolCalls(toolCalls, toolImplementations)
 
       if (toolResultParts.length > 0) {
         const toolMessage: CoreMessage = {
@@ -233,12 +275,8 @@ export async function runIteration(
     console.log('Running model…')
 
     try {
-      const { result, logEntry } = await runModel(state.messages)
-
-      // Add the model invocation log entry
+      const { result, logEntry } = await runModel(state.messages, logEntries, toolDefinititions)
       logEntries.push(logEntry)
-
-      // Add the model's response messages to our message list
       messagesToAddToHistory.push(...result.response.messages)
 
       return {
@@ -283,20 +321,27 @@ export async function runIteration(
 export async function runAgent(
   initialState: VirtaAgentState
 ): Promise<RunAgentResult> {
+  const mcpContext: MCPContextType = await _createMCPContext()
+
   let currentState = { ...initialState }
   let iterations = 0
   const MAX_ITERATIONS = 20
   let finished = false
 
-  while (iterations < MAX_ITERATIONS && !finished) {
-    const iterationResult = await runIteration(currentState)
-
-    // Update state with the result of this iteration
-    currentState = iterationResult.nextState
-
-    // Check if we're done
-    finished = iterationResult.finished
-    iterations++
+  try {
+    while (iterations < MAX_ITERATIONS && !finished) {
+      const iterationResult = await runIteration(currentState, mcpContext.toolDefinititions, mcpContext.toolImplementations)
+      currentState = iterationResult.nextState
+      finished = iterationResult.finished
+      iterations++
+    }
+  } finally {
+    if (mcpContext && mcpContext.mcpClient && typeof mcpContext.mcpClient.close === 'function') {
+      mcpContext.mcpClient.close();
+      consola.info('MCP client connection explicitly closed.');
+    } else {
+      consola.warn('MCP client does not have a close method or mcpContext/mcpClient is not available for closing.');
+    }
   }
 
   if (iterations >= MAX_ITERATIONS) {
@@ -331,10 +376,10 @@ function extractToolCalls(messages: CoreMessage[]): ToolCallPart[] {
 
 // Helper function to process tool calls
 async function processToolCalls(
-  toolCalls: ToolCallPart[]
+  toolCalls: ToolCallPart[],
+  toolImplementations: ToolImplementationsMap
 ): Promise<ToolResultPart[]> {
   const toolResultParts: ToolResultPart[] = []
-  const toolImplementations = (await mcpPromise).toolImplementations
 
   for (const toolCall of toolCalls) {
     const toolName = toolCall.toolName

@@ -25,13 +25,21 @@ async function main() {
       // Output the decrypted content
       console.log(decrypted)
     } catch (error) {
-      console.error('Decryption failed:', error.message)
+      if (error instanceof Error) {
+        console.error('Decryption failed:', error.message)
+      } else {
+        console.error('Decryption failed:', String(error))
+      }
       process.exit(1)
     }
   })
 }
 
-main().catch(error => {
-  console.error('Error:', error)
+main().catch(e => { // Renamed error to e to avoid conflict if it's not an Error instance
+  if (e instanceof Error) {
+    console.error('Error:', e.message)
+  } else {
+    console.error('Error:', String(e))
+  }
   process.exit(1)
 })

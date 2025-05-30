@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app'
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: 'AIzaSyDp9XHcCy-sz1m65cr_ei5KaXHmRaUspTI',
+  apiKey: 'AIzaSyAmj0axCEWY5ojSMDs25h0hNNfMFCRIqys',
   authDomain: 'dtinth-automatron.firebaseapp.com',
   projectId: 'dtinth-automatron',
   storageBucket: 'dtinth-automatron.appspot.com',

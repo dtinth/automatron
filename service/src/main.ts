@@ -41,7 +41,11 @@ const line = new Elysia()
       const body = await clone.arrayBuffer()
       const actual = request.headers.get('X-Line-Signature')
       const channelSecret = await decryptText(
-        (await config.get('LINE_CHANNEL_SECRET_DEV')) as string
+        (await config.get(
+          process.env.APP_ENV === 'production'
+            ? 'LINE_CHANNEL_SECRET_PROD'
+            : 'LINE_CHANNEL_SECRET_DEV'
+        )) as string
       )
       return validateSignature(Buffer.from(body), channelSecret, actual!)
     })

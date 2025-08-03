@@ -21,7 +21,11 @@ import { baseUrl, sessionStorage, signatureValidators } from './web.ts'
 async function getLineConfig() {
   return {
     channelAccessToken: await decryptText(
-      (await config.get('LINE_CHANNEL_ACCESS_TOKEN_DEV')) as string
+      (await config.get(
+        process.env.APP_ENV === 'production'
+          ? 'LINE_CHANNEL_ACCESS_TOKEN_PROD'
+          : 'LINE_CHANNEL_ACCESS_TOKEN_DEV'
+      )) as string
     ),
   }
 }

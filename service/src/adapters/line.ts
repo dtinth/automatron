@@ -5,30 +5,32 @@ import type { GenericMessage, MessageResponse } from '../brain.ts'
 
 // Convert LINE messages to generic format
 export async function handleLINEMessage(
-  event: any, 
+  event: any,
   lineConfig: { channelAccessToken: string }
 ): Promise<GenericMessage> {
   if (event.message.type === 'text') {
     return {
       type: 'text',
       userId: event.source.userId,
-      text: event.message.text
+      text: event.message.text,
     }
   } else if (['image', 'audio', 'video', 'file'].includes(event.message.type)) {
     try {
       // Create blob client for LINE content
       const lineBlobClient = new messagingApi.MessagingApiBlobClient(lineConfig)
-      
+
       // Get content from LINE
       const content = await lineBlobClient.getMessageContent(event.message.id)
-      
+
       // Determine content type - LINE might not provide content type headers properly
       // for media messages, but we could try to infer from the file extension or message type
       const contentType = determineContentType(event.message)
-      
+
       // Create a unique blob name
-      const blobName = `${event.source.userId}/${Date.now()}-${event.message.id}.${getFileExtension(event.message)}`
-      
+      const blobName = `${event.source.userId}/${Date.now()}-${
+        event.message.id
+      }.${getFileExtension(event.message)}`
+
       // Upload to Azure Blob Storage using our service
       const { blobKey, contentLength } = await blobService.uploadStream(
         'ephemeral',
@@ -36,15 +38,17 @@ export async function handleLINEMessage(
         content,
         contentType
       )
-      
+
       // After successful upload, return the message with the blob key
       return {
         type: event.message.type as 'audio' | 'video' | 'file',
         userId: event.source.userId,
         blobKey,
         contentType,
-        filename: event.message.fileName || `${event.message.id}.${getFileExtension(event.message)}`,
-        size: contentLength
+        filename:
+          event.message.fileName ||
+          `${event.message.id}.${getFileExtension(event.message)}`,
+        size: contentLength,
       }
     } catch (error) {
       consola.error('Error uploading media to blob storage:', error)
@@ -82,14 +86,19 @@ function getFileExtension(message: any): string {
       return parts[parts.length - 1]
     }
   }
-  
+
   // Default extensions based on type
   switch (message.type) {
-    case 'image': return 'jpg'
-    case 'audio': return 'mp3'
-    case 'video': return 'mp4'
-    case 'file': return 'bin'
-    default: return 'bin'
+    case 'image':
+      return 'jpg'
+    case 'audio':
+      return 'mp3'
+    case 'video':
+      return 'mp4'
+    case 'file':
+      return 'bin'
+    default:
+      return 'bin'
   }
 }
 
@@ -97,8 +106,8 @@ function getFileExtension(message: any): string {
 
 // Send response back to LINE
 export async function sendLINEResponse(
-  response: MessageResponse, 
-  replyToken: string, 
+  response: MessageResponse,
+  replyToken: string,
   lineConfig: { channelAccessToken: string }
 ): Promise<void> {
   const client = new messagingApi.MessagingApiClient(lineConfig)

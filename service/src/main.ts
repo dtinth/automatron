@@ -59,13 +59,19 @@ const line = new Elysia()
     return { validateLineSignature: signatureValidator }
   })
   .post('/line-webhook', async ({ body, validateLineSignature, set }) => {
+    consola.info('Received LINE webhook request')
+
     if (!(await validateLineSignature())) {
+      consola.warn('LINE webhook signature validation failed')
       set.status = 401
       return 'Unauthorized'
     }
+
     const payload = body as unknown as WebhookRequestBody
     const userId = await config.get('LINE_OWNER_USER_ID')
     const lineConfig = await getLineConfig()
+
+    consola.info(`Processing ${payload.events.length} webhook events`)
 
     for (const event of payload.events) {
       if (event.source.userId !== userId) {
@@ -73,6 +79,9 @@ const line = new Elysia()
         continue
       }
       if (event.type === 'message') {
+        consola.info(
+          `Processing message event from user ${event.source.userId}`
+        )
         const replyToken = event.replyToken
 
         // Show loading animation
@@ -95,6 +104,7 @@ const line = new Elysia()
           const response = await brain.processMessage(genericMessage)
 
           if (!response) {
+            consola.warn('No response generated for message')
             const client = new messagingApi.MessagingApiClient(lineConfig)
             await client.replyMessage({
               replyToken,
@@ -108,6 +118,7 @@ const line = new Elysia()
             continue
           }
 
+          consola.info('Sending response back to LINE')
           // Send response back to LINE
           await sendLINEResponse(response, replyToken, lineConfig)
         } catch (error) {
@@ -127,6 +138,7 @@ const line = new Elysia()
         }
       }
     }
+    consola.info('LINE webhook processing completed')
     return 'ok'
   })
 

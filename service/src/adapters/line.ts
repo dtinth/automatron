@@ -11,7 +11,6 @@ export async function handleLINEMessage(
   if (event.message.type === 'text') {
     return {
       type: 'text',
-      userId: event.source.userId,
       text: event.message.text,
     }
   } else if (['image', 'audio', 'video', 'file'].includes(event.message.type)) {
@@ -42,7 +41,6 @@ export async function handleLINEMessage(
       // After successful upload, return the message with the blob key
       return {
         type: event.message.type as 'audio' | 'video' | 'file',
-        userId: event.source.userId,
         blobKey,
         contentType,
         filename:

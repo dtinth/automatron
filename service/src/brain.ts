@@ -3,7 +3,6 @@ export type MessageType = 'text' | 'image' | 'audio' | 'video' | 'file'
 
 export interface BaseMessage {
   type: MessageType
-  userId: string
 }
 
 export interface TextMessage extends BaseMessage {
@@ -45,7 +44,9 @@ export class Brain {
     plugin(this)
   }
 
-  async processMessage(message: GenericMessage): Promise<MessageResponse | null> {
+  async processMessage(
+    message: GenericMessage
+  ): Promise<MessageResponse | null> {
     for (const handler of this.handlers) {
       if (handler.canHandle(message)) {
         return await handler.handle(message)

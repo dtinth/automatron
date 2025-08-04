@@ -19,6 +19,7 @@
     "async-cache-dedupe": "^2.2.0",
     "consola": "^3.4.2",
     "elysia": "^1.2.25",
+    "grist-api": "^0.1.7",
     "jose": "^6.0.11",
     "ofetch": "^1.4.1",
     "openid-client": "^6.5.0",

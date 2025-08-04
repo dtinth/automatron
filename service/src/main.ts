@@ -13,6 +13,7 @@ import { Brain } from './brain.ts'
 import { config } from './config.ts'
 import { remixSession } from './elysiaPlugins/remixSession.ts'
 import { decryptText, getRecipient } from './encryption.ts'
+import { getGrist } from './grist.ts'
 import { createLogger } from './logger.ts'
 import { registerCorePlugins } from './plugins/index.ts'
 import { storage } from './storage.ts'
@@ -69,11 +70,70 @@ const line = new Elysia()
 
     const payload = body as unknown as WebhookRequestBody
     const userId = await config.get('LINE_OWNER_USER_ID')
+    const groupId = await config.get('LINE_GROUP_ID')
     const lineConfig = await getLineConfig()
 
     consola.info(`Processing ${payload.events.length} webhook events`)
 
     for (const event of payload.events) {
+      if (event.type !== 'message') {
+        continue
+      }
+
+      if (event.source.type === 'group' && event.source.groupId === groupId) {
+        consola.info(`Processing group message event...`, JSON.stringify(event))
+        if (event.source.userId !== userId) {
+          consola.warn(`User ID mismatch: ${event.source.userId} !== ${userId}`)
+          continue
+        }
+        const mentioned =
+          event.message.type === 'text' &&
+          (event.message.mention?.mentionees?.length || 0) > 0 &&
+          event.message.text.includes('@virta')
+        const grist = await getGrist()
+        const genericMessage = await handleLINEMessage(event, lineConfig)
+        await grist.syncTable(
+          'Message_Log',
+          [
+            {
+              messageId: `line_${event.message.id}`,
+              sender: 'dtinth',
+              time: new Date(event.timestamp).toISOString(),
+              message: JSON.stringify(genericMessage),
+            },
+          ],
+          ['messageId']
+        )
+
+        if (mentioned) {
+          // Show loading animation
+          const animationClient = new messagingApi.MessagingApiClient(
+            lineConfig
+          )
+          animationClient
+            .showLoadingAnimation({
+              chatId: event.source.userId,
+              loadingSeconds: 60,
+            })
+            .catch((err) => {
+              consola.error('Error showing loading animation:', err)
+            })
+
+          const client = new messagingApi.MessagingApiClient(lineConfig)
+          const replyToken = event.replyToken
+          await client.replyMessage({
+            replyToken,
+            messages: [
+              {
+                type: 'text',
+                text: 'unimplemented',
+              },
+            ],
+          })
+        }
+        continue
+      }
+
       if (event.source.userId !== userId) {
         consola.warn(`User ID mismatch: ${event.source.userId} !== ${userId}`)
         continue

@@ -1,5 +1,5 @@
 import { html, type Html } from '@thai/html'
-import { type CoreMessage } from 'ai'
+import { type ModelMessage } from 'ai'
 import { Elysia } from 'elysia'
 import { createHash } from 'node:crypto'
 import { Readable } from 'node:stream'
@@ -115,8 +115,8 @@ export async function saveAgentState(
  * Calculate total token usage from all model invocations
  */
 function calculateTokenUsage(state: VirtaAgentState): {
-  promptTokens: number
-  completionTokens: number
+  inputTokens: number
+  outputTokens: number
   totalTokens: number
   costUSD: number
   costTHB: number
@@ -137,8 +137,8 @@ calculateTokenUsage.calculateUsage = function(state: VirtaAgentState) {
   const USD_TO_THB = calculateTokenUsage.USD_TO_THB
 
   const result = {
-    promptTokens: 0,
-    completionTokens: 0,
+    inputTokens: 0,
+    outputTokens: 0,
     totalTokens: 0,
     costUSD: 0,
     costTHB: 0
@@ -152,16 +152,16 @@ calculateTokenUsage.calculateUsage = function(state: VirtaAgentState) {
   // Sum up token usage
   for (const entry of modelInvocations) {
     if (entry.usage) {
-      result.promptTokens += entry.usage.promptTokens || 0
-      result.completionTokens += entry.usage.completionTokens || 0
+      result.inputTokens += entry.usage.inputTokens || 0
+      result.outputTokens += entry.usage.outputTokens || 0
       result.totalTokens += entry.usage.totalTokens || 0
     }
   }
 
   // Calculate costs
   result.costUSD = (
-    (result.promptTokens / 1000000) * PROMPT_PRICE_PER_MILLION +
-    (result.completionTokens / 1000000) * COMPLETION_PRICE_PER_MILLION
+    (result.inputTokens / 1000000) * PROMPT_PRICE_PER_MILLION +
+    (result.outputTokens / 1000000) * COMPLETION_PRICE_PER_MILLION
   )
   result.costTHB = result.costUSD * USD_TO_THB
 
@@ -208,20 +208,22 @@ function renderChatMessages(state: VirtaAgentState): Html[] {
           contentParts.push(html`
             <details class="Tool Tool--call">
               <summary>Tool Call: ${part.toolName}</summary>
-              <pre class="Tool__args">${JSON.stringify(part.args, null, 2)}</pre>
+              <pre class="Tool__args">${JSON.stringify(
+                part.input,
+                null,
+                2
+              )}</pre>
             </details>
           `)
         } else if (part.type === 'tool-result') {
-          const resultClass = part.isError
-            ? 'Tool Tool--result Tool--error'
-            : 'Tool Tool--result'
+          const resultClass = 'Tool Tool--result'
           contentParts.push(html`
             <details class="${resultClass}">
               <summary>
-                Tool Result: ${part.toolName}${part.isError ? ' (Error)' : ''}
+                Tool Result: ${part.toolName}
               </summary>
               <pre class="Tool__result-content">
-${JSON.stringify(part.result, null, 2)}</pre
+${JSON.stringify(part.output, null, 2)}</pre
               >
             </details>
           `)
@@ -342,15 +344,15 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
                     <tbody>
                       <tr>
                         <td>Prompt</td>
-                        <td>${tokenUsage.promptTokens.toLocaleString()}</td>
-                        <td>฿${((tokenUsage.promptTokens / 1000000) *
+                        <td>${tokenUsage.inputTokens.toLocaleString()}</td>
+                        <td>฿${((tokenUsage.inputTokens / 1000000) *
                           calculateTokenUsage.PROMPT_PRICE_PER_MILLION *
                           calculateTokenUsage.USD_TO_THB).toFixed(2)}</td>
                       </tr>
                       <tr>
                         <td>Completion</td>
-                        <td>${tokenUsage.completionTokens.toLocaleString()}</td>
-                        <td>฿${((tokenUsage.completionTokens / 1000000) *
+                        <td>${tokenUsage.outputTokens.toLocaleString()}</td>
+                        <td>฿${((tokenUsage.outputTokens / 1000000) *
                           calculateTokenUsage.COMPLETION_PRICE_PER_MILLION *
                           calculateTokenUsage.USD_TO_THB).toFixed(2)}</td>
                       </tr>
@@ -390,5 +392,5 @@ export const chatRoutes = new Elysia({ prefix: '/chat' })
         </div>
         ${styles}
       `,
-    })
+    });
   })

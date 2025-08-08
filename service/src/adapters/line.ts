@@ -70,7 +70,7 @@ function determineContentType(message: any): string {
       return 'video/mp4'
     case 'file':
       // Try to determine from file extension
-      const extension = getFileExtension(message).toLowerCase()
+      const extension = getFileExtension(message.file).toLowerCase()
       return getMimeTypeFromExtension(extension) || 'application/octet-stream'
     default:
       return 'application/octet-stream'

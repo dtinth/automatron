@@ -5,7 +5,7 @@
   "version": "2.0.0",
   "repository": "https://github.com/dtinth/automatron",
   "dependencies": {
-    "@ai-sdk/google": "^1.2.17",
+    "@ai-sdk/google": "2.0.0",
     "@azure/data-tables": "^13.3.0",
     "@azure/identity": "^4.8.0",
     "@azure/storage-blob": "^12.17.0",
@@ -15,7 +15,7 @@
     "@sec-ant/readable-stream": "^0.6.0",
     "@thai/html": "npm:@jsr/thai__html@0.1.0-alpha.1",
     "age-encryption": "^0.2.1",
-    "ai": "^4.3.15",
+    "ai": "5.0.0",
     "async-cache-dedupe": "^2.2.0",
     "consola": "^3.4.2",
     "elysia": "^1.2.25",
@@ -26,8 +26,7 @@
     "p-lazy": "^5.0.0",
     "p-memoize": "^7.1.1",
     "unstorage": "^1.15.0",
-    "ws": "^8.18.0",
-    "zod": "^3.24.4"
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.1",
@@ -35,7 +34,8 @@
     "@types/yargs": "^17.0.33",
     "typescript": "^5.8.2",
     "yaml": "^2.7.1",
-    "yargs": "^17.7.2"
+    "yargs": "^17.7.2",
+    "zod": "3.25.76"
   },
   "type": "module",
   "scripts": {

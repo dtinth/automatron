@@ -1,17 +1,14 @@
-import {
-  type ToolExecutionOptions,
-  type ToolResultPart,
-  type ToolSet,
-} from 'ai'
-import { z } from 'zod'
+import { type ToolResultPart, type ToolSet } from 'ai'
+import { z, type ZodTypeAny } from 'zod'
 
 export const tools = {} satisfies ToolSet
 
-export type ToolResult = Pick<ToolResultPart, 'isError' | 'result'>
+export type ToolResult = { output: any; isError?: boolean }
 
 export type ToolImplementation<TOOLS extends ToolSet> = {
   [K in keyof TOOLS]?: (
-    args: z.infer<TOOLS[K]['parameters']>,
-    options: ToolExecutionOptions
+    args: TOOLS[K]['inputSchema'] extends z.ZodTypeAny
+      ? z.infer<TOOLS[K]['inputSchema']>
+      : unknown
   ) => Promise<ToolResult>
 }

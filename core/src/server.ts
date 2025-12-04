@@ -29,8 +29,8 @@ function loadEnv() {
       for (const [key, value] of Object.entries(encryptedEnv)) {
         const ciphertext = age.armor.decode(value)
         env[key] = await d.decrypt(ciphertext, 'text')
-        console.log('Decrypted', key)
       }
+      console.log('Decrypted keys:', Object.keys(env))
       return env
     })
 }

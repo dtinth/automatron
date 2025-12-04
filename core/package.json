@@ -17,6 +17,7 @@
     "dev": "node dev.js"
   },
   "dependencies": {
+    "google-application-credentials-base64": "0.0.0",
     "@dtinth/encrypted": "^0.3.1",
     "@google-cloud/firestore": "^5.0.2",
     "@google-cloud/storage": "^7.18.0",

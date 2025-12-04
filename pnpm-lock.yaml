@@ -61,6 +61,9 @@ importers:
       form-data:
         specifier: ~4.0.0
         version: 4.0.0
+      google-application-credentials-base64:
+        specifier: 0.0.0
+        version: 0.0.0
       google-auth-library:
         specifier: ~7.12.0
         version: 7.12.0
@@ -3351,6 +3354,9 @@ packages:
 
   globrex@0.1.2:
     resolution: {integrity: sha512-uHJgbwAMwNFf5mLst7IWLNg14x1CkeqglJb/K3doi4dw6q2IvAAmM/Y81kevy83wP+Sst+nutFTYOGg3d1lsxg==}
+
+  google-application-credentials-base64@0.0.0:
+    resolution: {integrity: sha512-qg+7+CFYdDibieiyGwA1DYPO5RC22S6+iNNvgEYUo0Hu1ULGH31bLWGCXVKCkwwk1HqhHlR8zHCfUTyG8igD2A==}
 
   google-auth-library@7.12.0:
     resolution: {integrity: sha512-RS/whvFPMoF1hQNxnoVET3DWKPBt1Xgqe2rY0k+Jn7TNhoHlwdnSe7Rlcbo2Nub3Mt2lUVz26X65aDQrWp6x8w==}
@@ -10142,6 +10148,8 @@ snapshots:
       slash: 3.0.0
 
   globrex@0.1.2: {}
+
+  google-application-credentials-base64@0.0.0: {}
 
   google-auth-library@7.12.0:
     dependencies:

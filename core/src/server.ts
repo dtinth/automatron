@@ -24,6 +24,9 @@ function loadEnv() {
     })
 }
 let envPromise = loadEnv()
+envPromise.then((env) => {
+  console.log('Environment has been loaded')
+})
 
 app.use(async (req, res, next) => {
   try {

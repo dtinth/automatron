@@ -1,0 +1,8 @@
+default_provider = "age"
+
+[providers.age]
+type = "age"
+recipients = ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHac2M/WdCsejGpA87JlU2uwvVokPhqD7eufdMDoEU8z"]
+
+[secrets]
+AUTOMATRON_ENV_GS_URI= { provider = "age", value = "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IHNzaC1lZDI1NTE5IDU1NTU1QSBncDNLZzZoVTkrMWJXL1M4aURiUkIxdTI2WWp4K0VGeTBPbVFBVm04WTNzCmVoSlBCQlRpeGhlaE5vcVNXNGhhUitUSjNkMmtzYmhNYmVNR2ladUtBajgKLS0tIE1Ielo2dmtrVkhqN3owT200dFFyY0VXYU9oYUVHSzlKSGNJM2l1cDN2RVEKMWVHv0rO76kjddPZkoIWIqCuSJchsgx4kGFq4cIOmz5K2oM8ZAtr7TSslKvS7CniY5KYlVdMJst7+c7BvXrkADZ/aGqiYC7LUdkEhuEWxDDDIFAhgg==" }

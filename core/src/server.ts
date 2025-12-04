@@ -1,7 +1,9 @@
 import { Storage } from '@google-cloud/storage'
 import { start } from '@google-cloud/trace-agent'
+import * as age from 'age-encryption'
 import express from 'express'
 import 'google-application-credentials-base64'
+import { BotSecrets } from './BotSecrets'
 
 const bot = require('./bot')
 const tracer = start()
@@ -19,20 +21,28 @@ function loadEnv() {
     .bucket(bucket)
     .file(file)
     .download()
-    .then(([data]) => {
-      const env = require('dotenv').parse(data)
+    .then(async ([data]) => {
+      const encryptedEnv = JSON.parse(data.toString()) as Record<string, string>
+      const env: Record<string, string> = {}
+      const d = new age.Decrypter()
+      d.addIdentity(process.env.AGE_SECRET_KEY!)
+      for (const [key, value] of Object.entries(encryptedEnv)) {
+        const ciphertext = age.armor.decode(value)
+        env[key] = await d.decrypt(ciphertext, 'text')
+        console.log('Decrypted', key)
+      }
       return env
     })
 }
 let envPromise = loadEnv()
-envPromise.then((env) => {
+envPromise.then(async (env) => {
   console.log('Environment has been loaded')
 })
 
 app.use(async (req, res, next) => {
   try {
     req.tracer = tracer
-    req.env = await envPromise
+    req.env = (await envPromise) as unknown as BotSecrets
     bot(req, res)
   } catch (err) {
     next(err)

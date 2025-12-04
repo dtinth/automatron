@@ -1,6 +1,7 @@
 import { Storage } from '@google-cloud/storage'
 import { start } from '@google-cloud/trace-agent'
 import express from 'express'
+import 'google-application-credentials-base64'
 
 const bot = require('./bot')
 const tracer = start()

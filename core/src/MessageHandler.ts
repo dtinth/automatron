@@ -106,13 +106,15 @@ export async function handleTextMessage(
     const amount = (enteredAmount * conversionRate).toFixed(2)
     const category = (
       {
-        t: 'transportation',
-        f: 'food',
-        g: 'game',
-        h: 'health',
-        m: 'miscellaneous',
-        o: 'occasion',
-        l: 'lodging',
+        f: 'Food',
+        t: 'Transportation',
+        s: 'Stationery',
+        g: 'Grocery',
+        h: 'Hygiene',
+        m: 'Medicine',
+        w: 'Wellness',
+        // o: 'occasion',
+        // l: 'lodging',
       } as {
         [k: string]: string
       }

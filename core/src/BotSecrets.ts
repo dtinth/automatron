@@ -7,13 +7,13 @@ export interface BotSecrets {
   LINE_CHANNEL_ACCESS_TOKEN: string
   /** My user ID, so that the bot receives commands from me only */
   LINE_USER_ID: string
-  /** Self-explanatory */
+  /** Self-explanatory @deprecated */
   AIRTABLE_API_KEY: string
-  /** The ID of the Airtable base used for tracking expenses (should start with ‘app’) */
+  /** The ID of the Airtable base used for tracking expenses (should start with ‘app’) @deprecated */
   AIRTABLE_EXPENSE_BASE: string
-  /** The web URL to the Airtable base, used for deep linking */
+  /** The web URL to the Airtable base, used for deep linking @deprecated */
   AIRTABLE_EXPENSE_URI: string
-  /** The ID of the Airtable base used for cron jobs (should start with ‘app’) */
+  /** The ID of the Airtable base used for cron jobs (should start with ‘app’) @deprecated */
   AIRTABLE_CRON_BASE: string
   /** Two numbers in form of A/B, where A is usage budget per day (rolls over to the next day) and B is starting budget */
   EXPENSE_PACEMAKER: string
@@ -31,4 +31,11 @@ export interface BotSecrets {
   MONGODB_URL: string
   /** Subject ID for Google Auth */
   GOOGLE_AUTH_SUB: string
+
+  /** Base URL for Grist */
+  GRIST_BASE_URL: string
+  /** API key for Grist */
+  GRIST_API_KEY: string
+  /** Document ID for Grist expense tracking */
+  GRIST_EXPENSE_DOC_ID: string
 }

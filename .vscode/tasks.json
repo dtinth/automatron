@@ -2,16 +2,27 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "type": "npm",
-      "script": "dev",
-      "path": "core/",
-      "problemMatcher": [],
-      "label": "npm: dev - core",
-      "detail": "node dev.js",
+      "label": "pnpm: dev",
+      "type": "shell",
+      "command": "pnpm dev",
+      "group": "build"
+    },
+    {
+      "label": "pnpm: tunnel",
+      "type": "shell",
+      "command": "pnpm tunnel",
+      "group": "build"
+    },
+    {
+      "label": "pnpm: dev+tunnel",
+      "type": "shell",
+      "command": "echo Running pnpm dev and pnpm tunnel in parallel...",
+      "dependsOn": ["pnpm: dev", "pnpm: tunnel"],
       "group": {
         "kind": "build",
         "isDefault": true
-      }
+      },
+      "problemMatcher": []
     }
   ]
 }

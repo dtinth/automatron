@@ -12,9 +12,7 @@
   "main": "app.js",
   "scripts": {
     "start": "tsx src/server.ts",
-    "start:dev": "tsx --watch src/server.ts",
-    "deploy": "gcloud app deploy --quiet",
-    "dev": "node dev.js"
+    "dev": "env AUTOMATRON_ENV=dev tsx --watch src/server.ts"
   },
   "dependencies": {
     "age-encryption": "0.2.4",

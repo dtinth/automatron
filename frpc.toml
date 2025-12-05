@@ -1,0 +1,8 @@
+serverAddr = "{{ .Envs.FRP_SERVER_ADDR }}"
+serverPort = 7000
+
+[[proxies]]
+name = "automatron"
+type = "http"
+localPort = 28364
+subdomain = "automatron-tunnel"

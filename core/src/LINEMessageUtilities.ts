@@ -1,14 +1,9 @@
-import {
-  FlexBox,
-  FlexText,
-  FlexBubble,
-  FlexMessage,
-  messagingApi,
-} from '@line/bot-sdk'
+import { messagingApi } from '@line/bot-sdk'
 
 export function toMessages(data: any): messagingApi.Message[] {
   if (!data) data = '...'
   if (typeof data === 'string') data = [{ type: 'text', text: data }]
+  if (!Array.isArray(data)) data = [data]
   return data
 }
 

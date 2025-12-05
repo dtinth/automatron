@@ -1,5 +1,6 @@
 [tools]
-node = "16"
+fnox = "latest"
+node = "24"
 
 [env]
 _.file = '.env'

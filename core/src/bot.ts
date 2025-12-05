@@ -535,9 +535,14 @@ function logError(title: string, e: any, extra: Record<string, any> = {}) {
 
 function getLineConfig(req: Request, res: Response) {
   const context = getAutomatronContext(req, res)
+  const isDev = process.env.AUTOMATRON_ENV === 'dev'
   return {
-    channelAccessToken: context.secrets.LINE_CHANNEL_ACCESS_TOKEN,
-    channelSecret: context.secrets.LINE_CHANNEL_SECRET,
+    channelAccessToken: isDev
+      ? context.secrets.DEV_LINE_CHANNEL_ACCESS_TOKEN
+      : context.secrets.LINE_CHANNEL_ACCESS_TOKEN,
+    channelSecret: isDev
+      ? context.secrets.DEV_LINE_CHANNEL_SECRET
+      : context.secrets.LINE_CHANNEL_SECRET,
   }
 }
 

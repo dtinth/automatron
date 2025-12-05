@@ -1,14 +1,18 @@
 import { messagingApi } from '@line/bot-sdk'
 import { GristDocAPI } from 'grist-api'
+import { ExpenseTrackingGristTables } from './ExpenseTrackingGrist'
 import { createBubble } from './LINEMessageUtilities'
+import { TypedGristDocAPI } from './TypedGristDocAPI'
 import { AutomatronContext } from './types'
+
+type ExpenseRecord = ExpenseTrackingGristTables['Daily_Expenses']
 
 function getGristDoc(context: AutomatronContext) {
   const grist = new GristDocAPI(context.secrets.GRIST_EXPENSE_DOC_ID, {
     server: context.secrets.GRIST_BASE_URL,
     apiKey: context.secrets.GRIST_API_KEY,
   })
-  return grist
+  return grist as TypedGristDocAPI<ExpenseTrackingGristTables>
 }
 
 export async function recordExpense(
@@ -16,18 +20,21 @@ export async function recordExpense(
   amount: string,
   category: string,
   remarks = ''
-) {
+): Promise<messagingApi.FlexMessage> {
   const date = new Date().toJSON().split('T')[0]
   // Airtable
   const doc = getGristDoc(context)
-  const record = await doc.addRecords('Daily_Expenses', [
+  const [id] = await doc.addRecords('Daily_Expenses', [
     {
-      Date: date,
+      Date: new Date(date + 'T00:00:00Z').getTime() / 1000,
       Category: category,
       Amount: parseInt(amount),
       Note: remarks,
     },
   ])
+  const gristUri =
+    context.secrets.GRIST_EXPENSE_URI +
+    `?openExternalBrowser=1#a1.s12.r${id}.c28`
   const body: messagingApi.FlexBox = {
     type: 'box',
     layout: 'vertical',
@@ -44,11 +51,11 @@ export async function recordExpense(
         wrap: true,
       },
     ],
-    // action: {
-    //   type: 'uri',
-    //   label: 'Open Airtable',
-    //   uri: context.secrets.AIRTABLE_EXPENSE_URI + '/' + record.getId(),
-    // },
+    action: {
+      type: 'uri',
+      label: 'Open Grist',
+      uri: gristUri,
+    },
   }
   const footer = await getExpensesSummaryData(context)
   const bubble = createBubble('expense tracking', body, {
@@ -77,36 +84,40 @@ export async function recordExpense(
           },
         ],
       })),
-      // action: {
-      //   type: 'uri',
-      //   label: 'Open Airtable',
-      //   uri: context.secrets.AIRTABLE_EXPENSE_URI,
-      // },
+      action: {
+        type: 'uri',
+        label: 'Open Grist',
+        uri: gristUri,
+      },
     },
   })
   return bubble
 }
 async function getExpensesSummaryData(context: AutomatronContext) {
-  // const date = new Date().toJSON().split('T')[0]
-  // const tableData = await getExpensesTable(context).select().all()
-  // const normalRecords = tableData.filter((r) => !r.get('Occasional'))
-  // const total = (records: AirtableRecord[]) =>
-  //   records.map((r) => +r.get('Amount') || 0).reduce((a, b) => a + b, 0)
-  // const firstDate = normalRecords
-  //   .map((r) => r.get('Date'))
-  //   .reduce((a, b) => (a < b ? a : b), date)
-  // const todayUsage = total(normalRecords.filter((r) => r.get('Date') === date))
-  // const totalUsage = total(normalRecords)
-  // const dayNumber =
-  //   Math.round((Date.parse(date) - Date.parse(firstDate)) / 86400e3) + 1
-  // const [pacemakerPerDay, pacemakerBase] =
-  //   context.secrets.EXPENSE_PACEMAKER.split('/')
-  // const pacemaker = +pacemakerBase + +pacemakerPerDay * dayNumber - totalUsage
-  // const $ = (v: number) => `฿${v.toFixed(2)}`
-  // return [
-  //   ['today', $(todayUsage)],
-  //   ['pace', $(pacemaker)],
-  //   ['day', `${dayNumber}`],
-  // ]
-  return [['pace', 'TBD']]
+  const date = new Date().toJSON().split('T')[0]
+  const gristToDate = (t: number) =>
+    new Date(t * 1000).toISOString().split('T')[0]
+  const grist = getGristDoc(context)
+  const tableData = await grist.fetchTable('Daily_Expenses')
+  const normalRecords = tableData.filter((r) => !r['Occasion'])
+  const total = (records: ExpenseRecord[]) =>
+    records.map((r) => +r['Amount'] || 0).reduce((a, b) => a + b, 0)
+  const firstDate = normalRecords
+    .map((r) => gristToDate(r['Date']))
+    .reduce((a, b) => (a < b ? a : b), date)
+  const todayUsage = total(
+    normalRecords.filter((r) => gristToDate(r['Date']) === date)
+  )
+  const totalUsage = total(normalRecords)
+  const dayNumber =
+    Math.round((Date.parse(date) - Date.parse(firstDate)) / 86400e3) + 1
+  const [pacemakerPerDay, pacemakerBase] =
+    context.secrets.EXPENSE_PACEMAKER.split('/')
+  const pacemaker = +pacemakerBase + +pacemakerPerDay * dayNumber - totalUsage
+  const $ = (v: number) => `฿${v.toFixed(0)}`
+  return [
+    ['today', $(todayUsage)],
+    ['pace', $(pacemaker)],
+    ['day', `${dayNumber}`],
+  ]
 }

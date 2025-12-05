@@ -68,11 +68,22 @@ automatron can also convert image to text using [Google Cloud Vision API](https:
 
 ## project structure
 
-This project is a monorepo managed by [Rush](https://rushjs.io/). It contains multiple subprojects:
-
-- [core](./core) — The core automatron service running on Google Cloud Run.
+- [core](./core) — The core automatron service.
 - [webui](./webui) — The web-based UI running on Vercel.
 
 ### other projects
 
 - [automatron-prelude](https://github.dev/dtinth/automatron-prelude/blob/main/prelude.js) contains code experimentation.
+
+### development setup
+
+```sh
+# Run the development server
+pnpm dev
+
+# Set up a tunnel using frp
+pnpm tunnel
+
+# Update a secret
+pnpm env:set SECRET_NAME
+```

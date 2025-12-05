@@ -3,8 +3,12 @@ export interface BotSecrets {
   API_KEY: string
   /** Self-explanatory */
   LINE_CHANNEL_SECRET: string
+  /** For development */
+  DEV_LINE_CHANNEL_SECRET: string
   /** Self-explanatory */
   LINE_CHANNEL_ACCESS_TOKEN: string
+  /** For development */
+  DEV_LINE_CHANNEL_ACCESS_TOKEN: string
   /** My user ID, so that the bot receives commands from me only */
   LINE_USER_ID: string
   /** Self-explanatory @deprecated */
@@ -38,4 +42,6 @@ export interface BotSecrets {
   GRIST_API_KEY: string
   /** Document ID for Grist expense tracking */
   GRIST_EXPENSE_DOC_ID: string
+  /** Document URI for Grist expense tracking */
+  GRIST_EXPENSE_URI: string
 }

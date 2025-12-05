@@ -38,7 +38,6 @@ let envPromise = loadEnv()
 envPromise.then(async (env) => {
   console.log('Environment has been loaded')
 })
-
 app.use('/run/automatron', async (req, res, next) => {
   try {
     req.tracer = tracer
@@ -47,6 +46,9 @@ app.use('/run/automatron', async (req, res, next) => {
   } catch (err) {
     next(err)
   }
+})
+app.get('/', (req, res) => {
+  res.send('Automatron is running')
 })
 app.listen(PORT, () => {
   console.log(`Automatron server is running on port ${PORT}`)

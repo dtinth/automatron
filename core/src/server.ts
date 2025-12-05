@@ -39,7 +39,7 @@ envPromise.then(async (env) => {
   console.log('Environment has been loaded')
 })
 
-app.use(async (req, res, next) => {
+app.use('/run/automatron', async (req, res, next) => {
   try {
     req.tracer = tracer
     req.env = (await envPromise) as unknown as BotSecrets

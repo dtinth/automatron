@@ -22,29 +22,21 @@ It is written in TypeScript and runs on [DigitalOcean App Platform](https://www.
 
 ![home automation](./images/home_automation.png)
 
-I have a Raspberry Pi set up which can [control lights](https://github.com/dtinth/hue.sh), [air conditioner](https://medium.com/@dtinth/remotely-turning-on-my-air-conditioner-through-google-assistant-1a1441471e9d), and [smart plugs](https://ifttt.com/services/kasa). It receives commands via [Google Cloud IoT Core](https://cloud.google.com/iot-core/), performs the action, and then reports back to automatron via [its API](#cli-api).
+I have a [Home Assistant](https://www.home-assistant.io/) setup which can [control lights](https://www.home-assistant.io/integrations/hue/), [air conditioner](https://www.home-assistant.io/integrations/broadlink/#remote), and [smart plugs](https://www.home-assistant.io/integrations/tplink/). automatron can send commands to [Home Assistant’s REST API](https://developers.home-assistant.io/docs/api/rest/) to control these devices.
 
 ### expense tracking
 
 ![expense tracking](./images/expense_tracking.png)
 
-Simple expense tracking by typing in the amount + category. Example: 50f means ฿50 for food. Data is saved in [Airtable](https://airtable.com/).
+Simple expense tracking by typing in the amount + category. Example: 50f means ฿50 for food. Data is saved in [Grist](https://www.getgrist.com/).
 
-On mobile, tapping the bubble’s body (containing the amount) will take me to the created Airtable record. This allows me to easily edit or add remarks to the record. Tapping the bubble’s footer (containing the stats) will take me to Airtable view, which lets me see all the recorded data.
+On mobile, tapping the bubble’s body (containing the amount) will take me to the created Grist record. This allows me to easily edit or add remarks to the record.
 
 ### transaction aggregation
 
 ![transaction_aggregation](./images/transaction_aggregation.png)
 
-I [set up IFTTT to read SMS messages](https://ifttt.com/services/android_messages) and send it to automatron. It then uses [transaction-parser-th](https://github.com/dtinth/transaction-parser-th) to parse SMS message and extract transaction information. It is then sent to me as a [flex message](https://developers.line.me/en/docs/messaging-api/using-flex-messages/).
-
-![quick_replies](./images/quick_replies.png)
-
-In mobile phone, [quick reply buttons](https://developers.line.me/en/docs/messaging-api/using-quick-reply/) lets me quickly turn a transaction into an expense record by simply tapping on the category.
-
-![auto_expense](./images/auto_expense.png)
-
-Certain kinds of transactions can be automatically be turned into an expense, for example, when I [take BTS Skytrain using Rabbit LINE Pay card](https://brandinside.asia/rabbit-line-pay-bts/). Having many features in one bot enabled this kind of tight integrations.
+I built a [notification exfiltrator](https://docs.dt.in.th/dtinth.tools-android/exfiltrate.html) that send notifications my phone receive to automatron, which saves it to a database for later processing.
 
 ### image-to-text
 

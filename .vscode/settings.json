@@ -1,3 +1,4 @@
 {
-  "cSpell.words": ["Automatron"]
+  "cSpell.words": ["Automatron"],
+  "typescript.experimental.useTsgo": true
 }

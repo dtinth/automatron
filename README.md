@@ -58,6 +58,8 @@ automatron can also convert image to text using [Google Cloud Vision API](https:
 
 `POST /post` sends a message to my LINE account directly. This allows the [home automation](#home-automation) scripts to report back to me whenever the script is invoked.
 
+`POST /run/automatron/reload` reloads the encrypted environment file (requires `X-API-Key` header with `API_KEY`).
+
 ## project structure
 
 - [core](./core) — The core automatron service.

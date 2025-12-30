@@ -1,6 +1,7 @@
 import { Storage } from '@google-cloud/storage'
 import { start } from '@google-cloud/trace-agent'
 import * as age from 'age-encryption'
+import crypto from 'crypto'
 import express from 'express'
 import 'google-application-credentials-base64'
 import { BotSecrets } from './BotSecrets'
@@ -16,7 +17,7 @@ const [, bucket, file] = process.env.AUTOMATRON_ENV_GS_URI!.match(
   /^gs:\/\/([^\/]+)\/(.+)$/
 )!
 
-function loadEnv() {
+function loadEnv(): Promise<BotSecrets> {
   return storage
     .bucket(bucket)
     .file(file)
@@ -32,11 +33,62 @@ function loadEnv() {
       }
       console.log('Decrypted keys:', Object.keys(env))
       return env
-    })
+    }) as Promise<BotSecrets>
 }
-let envPromise = loadEnv()
-envPromise.then(async (env) => {
-  console.log('Environment has been loaded')
+let envPromise: Promise<BotSecrets> = loadEnv()
+let reloadPromise: Promise<BotSecrets> | null = null
+envPromise
+  .then(async (env) => {
+    console.log('Environment has been loaded')
+  })
+  .catch((err) => {
+    console.error('Unable to load environment', err)
+  })
+app.post('/run/automatron/reload', async (req, res, next) => {
+  try {
+    let validationEnv: BotSecrets
+    try {
+      validationEnv = await envPromise
+    } catch (err) {
+      console.warn('Existing environment unavailable, attempting reload', err)
+      validationEnv = await loadEnv()
+    }
+    const providedApiKey = req.get('X-API-Key')
+    const providedBuffer = providedApiKey
+      ? Buffer.from(providedApiKey, 'utf8')
+      : undefined
+    const expectedBuffer = Buffer.from(validationEnv.API_KEY, 'utf8')
+    if (
+      !providedBuffer ||
+      providedBuffer.length !== expectedBuffer.length ||
+      !crypto.timingSafeEqual(providedBuffer, expectedBuffer)
+    ) {
+      res.status(401).send('Invalid API key')
+      return
+    }
+    const startReload = () => {
+      const nextEnvPromise = loadEnv()
+      return nextEnvPromise
+        .then((env) => {
+          envPromise = nextEnvPromise
+          return env
+        })
+        .catch((err) => {
+          console.error('Unable to reload environment', err)
+          throw err
+        })
+        .finally(() => {
+          reloadPromise = null
+        })
+    }
+    if (!reloadPromise) {
+      reloadPromise = startReload()
+    }
+    await reloadPromise
+    res.json({ ok: true })
+  } catch (err) {
+    next(err)
+  }
 })
 app.use('/run/automatron', async (req, res, next) => {
   try {
